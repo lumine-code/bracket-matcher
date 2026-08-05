@@ -104,7 +104,7 @@
     }
   },
   "dependencies": {
-    "@lumine-code/second-mate": "https://github.com/lumine-code/second-mate.git#fe064b80a62dd767826cf5a49941cd7e0268309e"
+    "@lumine-code/second-mate": "https://github.com/lumine-code/second-mate.git#5887a9f0950d7fa356f7908113773df7ff34d060"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
