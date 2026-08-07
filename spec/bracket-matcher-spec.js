@@ -17,6 +17,10 @@ describe("bracket matching", () => {
   beforeEach(() => {
     atom.config.set("bracket-matcher.autocompleteBrackets", true);
 
+    // The commands are registered on atom-workspace, so an editor a dispatch is
+    // aimed at has to be inside the workspace rather than an orphan element.
+    jasmine.attachToDOM(atom.workspace.getElement());
+
     waitsForPromise(() => atom.packages.activatePackage("bracket-matcher"));
 
     waitsForPromise(() => atom.packages.activatePackage("language-javascript"));
