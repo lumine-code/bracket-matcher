@@ -1,4 +1,4 @@
-const { Point, TextBuffer } = require("atom");
+const { Point, TextBuffer } = require("lumine");
 
 const HAS_NEW_TEXT_BUFFER_VERSION = new TextBuffer().getLanguageMode().bufferDidFinishTransaction;
 const path = require("path");
@@ -15,29 +15,29 @@ describe("bracket matching", () => {
   let editorElement, editor, buffer, languageMode;
 
   beforeEach(() => {
-    atom.config.set("bracket-matcher.autocompleteBrackets", true);
+    lumine.config.set("bracket-matcher.autocompleteBrackets", true);
 
-    // The commands are registered on atom-workspace, so an editor a dispatch is
+    // The commands are registered on lumine-workspace, so an editor a dispatch is
     // aimed at has to be inside the workspace rather than an orphan element.
-    jasmine.attachToDOM(atom.workspace.getElement());
+    jasmine.attachToDOM(lumine.workspace.getElement());
 
-    waitsForPromise(() => atom.packages.activatePackage("bracket-matcher"));
+    waitsForPromise(() => lumine.packages.activatePackage("bracket-matcher"));
 
-    waitsForPromise(() => atom.packages.activatePackage("language-javascript"));
+    waitsForPromise(() => lumine.packages.activatePackage("language-javascript"));
 
-    waitsForPromise(() => atom.packages.activatePackage("language-xml"));
+    waitsForPromise(() => lumine.packages.activatePackage("language-xml"));
 
-    waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.js")));
+    waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.js")));
 
     waitsForPromise(() => {
-      let editor = atom.workspace.getActiveTextEditor();
+      let editor = lumine.workspace.getActiveTextEditor();
       let languageMode = editor.getBuffer().getLanguageMode();
       return languageMode.ready;
     });
 
     runs(() => {
-      editor = atom.workspace.getActiveTextEditor();
-      editorElement = atom.views.getView(editor);
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
       buffer = editor.getBuffer();
       languageMode = buffer.getLanguageMode();
     });
@@ -45,7 +45,7 @@ describe("bracket matching", () => {
 
   describe("matching bracket highlighting", () => {
     beforeEach(() => {
-      atom.config.set("bracket-matcher.highlightMatchingLineNumber", true);
+      lumine.config.set("bracket-matcher.highlightMatchingLineNumber", true);
     });
 
     function expectNoHighlights() {
@@ -350,7 +350,7 @@ describe("bracket matching", () => {
 
     describe("when highlightMatchingLineNumber config is disabled", () => {
       it("does not highlight the gutter", () => {
-        atom.config.set("bracket-matcher.highlightMatchingLineNumber", false);
+        lumine.config.set("bracket-matcher.highlightMatchingLineNumber", false);
         editor.moveToEndOfLine();
         editor.moveLeft();
         const gutterDecorations = editor
@@ -372,12 +372,12 @@ describe("bracket matching", () => {
     forEachLanguageWithTags((scopeName) => {
       describe(`${scopeName} tag matching`, () => {
         beforeEach(async () => {
-          await atom.packages.activatePackage("language-html");
-          await atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
-          editor = atom.workspace.getActiveTextEditor();
-          editorElement = atom.views.getView(editor);
+          await lumine.packages.activatePackage("language-html");
+          await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
+          editor = lumine.workspace.getActiveTextEditor();
+          editorElement = lumine.views.getView(editor);
           buffer = editor.buffer;
-          atom.grammars.assignLanguageMode(buffer, scopeName);
+          lumine.grammars.assignLanguageMode(buffer, scopeName);
           languageMode = buffer.getLanguageMode();
           languageMode.useAsyncParsing = false;
           languageMode.useAsyncIndent = false;
@@ -606,7 +606,7 @@ describe("bracket matching", () => {
       it("moves the cursor to after the ending pair", () => {
         editor.moveToEndOfLine();
         editor.moveLeft();
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([12, 1]);
       });
     });
@@ -614,7 +614,7 @@ describe("bracket matching", () => {
     describe("when the cursor is after the starting pair", () => {
       it("moves the cursor to before the ending pair", () => {
         editor.moveToEndOfLine();
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([12, 0]);
       });
     });
@@ -622,7 +622,7 @@ describe("bracket matching", () => {
     describe("when the cursor is before the ending pair", () => {
       it("moves the cursor to after the starting pair", () => {
         editor.setCursorBufferPosition([12, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 29]);
       });
     });
@@ -630,7 +630,7 @@ describe("bracket matching", () => {
     describe("when the cursor is after the ending pair", () => {
       it("moves the cursor to before the starting pair", () => {
         editor.setCursorBufferPosition([12, 1]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
       });
     });
@@ -639,7 +639,7 @@ describe("bracket matching", () => {
       describe("when within a `{}` pair", () => {
         it("moves the cursor to before the enclosing brace", () => {
           editor.setCursorBufferPosition([11, 2]);
-          atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+          lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
           expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
         });
       });
@@ -647,7 +647,7 @@ describe("bracket matching", () => {
       describe("when within a `()` pair", () => {
         it("moves the cursor to before the enclosing brace", () => {
           editor.setCursorBufferPosition([2, 14]);
-          atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+          lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
           expect(editor.getCursorBufferPosition()).toEqual([2, 7]);
         });
       });
@@ -659,12 +659,12 @@ describe("bracket matching", () => {
           // leaves the cursor where it was, which is indistinguishable from
           // tag matching being broken.
           beforeEach(async () => {
-            await atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
+            await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-            editor = atom.workspace.getActiveTextEditor();
-            editorElement = atom.views.getView(editor);
+            editor = lumine.workspace.getActiveTextEditor();
+            editorElement = lumine.views.getView(editor);
             buffer = editor.buffer;
-            atom.grammars.assignLanguageMode(buffer, scopeName);
+            lumine.grammars.assignLanguageMode(buffer, scopeName);
             const languageMode = buffer.getLanguageMode();
             languageMode.useAsyncParsing = false;
             languageMode.useAsyncIndent = false;
@@ -674,7 +674,7 @@ describe("bracket matching", () => {
           describe("when within a <tag></tag> pair", () => {
             it("moves the cursor to the starting tag", () => {
               editor.setCursorBufferPosition([5, 10]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([4, 9]);
             });
           });
@@ -682,43 +682,43 @@ describe("bracket matching", () => {
           describe("when on a starting <tag>", () => {
             it("moves the cursor to the end </tag>", () => {
               editor.setCursorBufferPosition([1, 2]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 2]);
 
               editor.setCursorBufferPosition([1, 3]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 4]);
 
               editor.setCursorBufferPosition([1, 4]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 5]);
 
               editor.setCursorBufferPosition([1, 5]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 6]);
 
               editor.setCursorBufferPosition([1, 6]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 7]);
 
               editor.setCursorBufferPosition([1, 7]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 8]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 9]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 10]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 16]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
             });
           });
@@ -726,35 +726,35 @@ describe("bracket matching", () => {
           describe("when on an ending </tag>", () => {
             it("moves the cursor to the start <tag>", () => {
               editor.setCursorBufferPosition([15, 2]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 2]);
 
               editor.setCursorBufferPosition([15, 3]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 3]);
 
               editor.setCursorBufferPosition([15, 4]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 3]);
 
               editor.setCursorBufferPosition([15, 5]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 4]);
 
               editor.setCursorBufferPosition([15, 6]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 5]);
 
               editor.setCursorBufferPosition([15, 7]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 6]);
 
               editor.setCursorBufferPosition([15, 8]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 7]);
 
               editor.setCursorBufferPosition([15, 9]);
-              atom.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 7]);
             });
           });
@@ -767,7 +767,7 @@ describe("bracket matching", () => {
     describe("when within a `{}` pair", () => {
       it("moves the cursor to before the enclosing brace", () => {
         editor.setCursorBufferPosition([11, 2]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
       });
     });
@@ -775,7 +775,7 @@ describe("bracket matching", () => {
     describe("when within a `()` pair", () => {
       it("moves the cursor to before the enclosing brace", () => {
         editor.setCursorBufferPosition([2, 14]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([2, 7]);
       });
     });
@@ -783,7 +783,7 @@ describe("bracket matching", () => {
     describe("when not within a pair", () => {
       it("does not do anything", () => {
         editor.setCursorBufferPosition([0, 3]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 3]);
       });
     });
@@ -793,7 +793,7 @@ describe("bracket matching", () => {
     describe("when the cursor on the left side of a bracket", () => {
       it("selects the text inside the brackets", () => {
         editor.setCursorBufferPosition([0, 28]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [0, 29],
           [12, 0],
@@ -804,7 +804,7 @@ describe("bracket matching", () => {
     describe("when the cursor on the right side of a bracket", () => {
       it("selects the text inside the brackets", () => {
         editor.setCursorBufferPosition([1, 30]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [1, 30],
           [9, 2],
@@ -815,7 +815,7 @@ describe("bracket matching", () => {
     describe("when the cursor is inside the brackets", () => {
       it("selects the text for the closest outer brackets", () => {
         editor.setCursorBufferPosition([6, 6]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [4, 29],
           [7, 4],
@@ -829,7 +829,7 @@ describe("bracket matching", () => {
         editor.setCursorBufferPosition([0, 500]);
 
         const start = Date.now();
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [0, 500],
           [0, 500],
@@ -839,20 +839,20 @@ describe("bracket matching", () => {
     });
 
     it("does not error when a bracket is already highlighted (regression)", () => {
-      atom.grammars.assignLanguageMode(editor, null);
+      lumine.grammars.assignLanguageMode(editor, null);
       editor.setText("(ok)");
       editor.selectAll();
-      atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
     });
 
     describe("when there are multiple cursors", () => {
       beforeEach(() => {
         waitsForPromise(() =>
-          atom.workspace.open(path.join(__dirname, "fixtures", "multiplecursor.md")),
+          lumine.workspace.open(path.join(__dirname, "fixtures", "multiplecursor.md")),
         );
         runs(() => {
-          editor = atom.workspace.getActiveTextEditor();
-          editorElement = atom.views.getView(editor);
+          editor = lumine.workspace.getActiveTextEditor();
+          editorElement = lumine.views.getView(editor);
         });
       });
       it("selects text inside the multiple cursors", () => {
@@ -862,7 +862,7 @@ describe("bracket matching", () => {
         editor.addCursorAtBufferPosition([3, 6]);
         editor.addCursorAtBufferPosition([4, 6]);
 
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
 
         const selectedRanges = editor.getSelectedBufferRanges();
         expect(selectedRanges.length).toBe(6);
@@ -901,12 +901,12 @@ describe("bracket matching", () => {
         // scopeName, so both iterations were testing whichever grammar
         // sample.xml happened to select, rather than the two named ones.
         beforeEach(async () => {
-          await atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
+          await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-          editor = atom.workspace.getActiveTextEditor();
-          editorElement = atom.views.getView(editor);
+          editor = lumine.workspace.getActiveTextEditor();
+          editorElement = lumine.views.getView(editor);
           buffer = editor.buffer;
-          atom.grammars.assignLanguageMode(buffer, scopeName);
+          lumine.grammars.assignLanguageMode(buffer, scopeName);
           const languageMode = buffer.getLanguageMode();
           languageMode.useAsyncParsing = false;
           languageMode.useAsyncIndent = false;
@@ -916,7 +916,7 @@ describe("bracket matching", () => {
         describe("when the cursor is on a starting tag", () => {
           it("selects the text inside the starting/closing tag", () => {
             editor.setCursorBufferPosition([4, 9]);
-            atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [4, 13],
               [6, 8],
@@ -927,7 +927,7 @@ describe("bracket matching", () => {
         describe("when the cursor is on an ending tag", () => {
           it("selects the text inside the starting/closing tag", () => {
             editor.setCursorBufferPosition([14, 9]);
-            atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [10, 9],
               [14, 4],
@@ -938,7 +938,7 @@ describe("bracket matching", () => {
         describe("when the cursor is inside a tag", () => {
           it("selects the text inside the starting/closing tag", () => {
             editor.setCursorBufferPosition([12, 8]);
-            atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [11, 11],
               [13, 6],
@@ -948,7 +948,7 @@ describe("bracket matching", () => {
 
         it("does not select attributes inside tags", () => {
           editor.setCursorBufferPosition([1, 10]);
-          atom.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+          lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
           expect(editor.getSelectedBufferRange()).toEqual([
             [1, 17],
             [15, 2],
@@ -962,7 +962,7 @@ describe("bracket matching", () => {
     describe("when the cursor is not in front of any pair", () => {
       it("performs a regular backspace action", () => {
         editor.setCursorBufferPosition([0, 1]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("ar quicksort = function () {");
         expect(editor.getCursorBufferPosition()).toEqual([0, 0]);
       });
@@ -971,7 +971,7 @@ describe("bracket matching", () => {
     describe("when the cursor is at the beginning of a line", () => {
       it("performs a regular backspace action", () => {
         editor.setCursorBufferPosition([12, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sort(Array.apply(this, arguments));};",
         );
@@ -982,7 +982,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the left side of a starting pair", () => {
       it("performs a regular backspace action", () => {
         editor.setCursorBufferPosition([0, 28]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("var quicksort = function (){");
         expect(editor.getCursorBufferPosition()).toEqual([0, 27]);
       });
@@ -991,7 +991,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the left side of an ending pair", () => {
       it("performs a regular backspace action", () => {
         editor.setCursorBufferPosition([7, 4]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(7)).toEqual("  }");
         expect(editor.getCursorBufferPosition()).toEqual([7, 2]);
       });
@@ -1000,7 +1000,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the right side of a starting pair, the ending pair on another line", () => {
       it("removes both pairs", () => {
         editor.setCursorBufferPosition([0, 29]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("var quicksort = function () ");
         expect(editor.lineTextForBufferRow(12)).toEqual(";");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
@@ -1010,7 +1010,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the right side of an ending pair, the starting pair on another line", () => {
       it("removes both pairs", () => {
         editor.setCursorBufferPosition([7, 5]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(4)).toEqual("    while(items.length > 0) ");
         expect(editor.lineTextForBufferRow(7)).toEqual("    ");
         expect(editor.getCursorBufferPosition()).toEqual([7, 4]);
@@ -1020,7 +1020,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the right side of a starting pair, the ending pair on the same line", () => {
       it("removes both pairs", () => {
         editor.setCursorBufferPosition([11, 14]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1031,7 +1031,7 @@ describe("bracket matching", () => {
     describe("when the cursor is on the right side of an ending pair, the starting pair on the same line", () => {
       it("removes both pairs", () => {
         editor.setCursorBufferPosition([11, 43]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1045,7 +1045,7 @@ describe("bracket matching", () => {
           [11, 13],
           [11, 14],
         ]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1059,7 +1059,7 @@ describe("bracket matching", () => {
           [11, 42],
           [11, 43],
         ]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1077,7 +1077,7 @@ describe("bracket matching", () => {
       it("does not change the text", () => {
         editor.insertText('"woah(');
         editor.selectAll();
-        atom.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
         expect(editor.buffer.getText()).toBe('"woah(');
       });
     });
@@ -1090,7 +1090,7 @@ describe("bracket matching", () => {
             [0, 3],
             [0, 19],
           ]);
-          atom.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+          lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
         });
 
         it("removes the brackets", () => {
@@ -1109,7 +1109,7 @@ describe("bracket matching", () => {
             [0, 3],
             [1, 4],
           ]);
-          atom.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+          lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
         });
 
         it("removes the brackets", () => {
@@ -1127,7 +1127,7 @@ describe("bracket matching", () => {
     beforeEach(async () => {
       editor.buffer.setText("");
       await editorReady(languageMode);
-      atom.config.set("language.autoIndent", true);
+      lumine.config.set("language.autoIndent", true);
     });
 
     describe("when more than one character is inserted", () => {
@@ -1150,7 +1150,7 @@ describe("bracket matching", () => {
 
     describe("when autocompleteBrackets configuration is disabled globally", () => {
       it("does not insert a matching bracket", () => {
-        atom.config.set("bracket-matcher.autocompleteBrackets", false);
+        lumine.config.set("bracket-matcher.autocompleteBrackets", false);
         editor.buffer.setText("}");
         editor.setCursorBufferPosition([0, 0]);
         editor.insertText("{");
@@ -1161,8 +1161,8 @@ describe("bracket matching", () => {
 
     describe("when autocompleteBrackets configuration is disabled in scope", () => {
       it("does not insert a matching bracket", () => {
-        atom.config.set("bracket-matcher.autocompleteBrackets", true);
-        atom.config.set("bracket-matcher.autocompleteBrackets", false, {
+        lumine.config.set("bracket-matcher.autocompleteBrackets", true);
+        lumine.config.set("bracket-matcher.autocompleteBrackets", false, {
           scopeSelector: ".source.js",
         });
         editor.buffer.setText("}");
@@ -1175,7 +1175,7 @@ describe("bracket matching", () => {
 
     describe("when autocompleteCharacters configuration is set globally", () => {
       it("inserts a matching angle bracket", () => {
-        atom.config.set("bracket-matcher.autocompleteCharacters", ["<>"]);
+        lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"]);
         editor.setCursorBufferPosition([0, 0]);
         editor.insertText("<");
         expect(buffer.lineForRow(0)).toBe("<>");
@@ -1185,7 +1185,7 @@ describe("bracket matching", () => {
 
     describe("when autocompleteCharacters configuration is set in scope", () => {
       it("inserts a matching angle bracket", () => {
-        atom.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
+        lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
           scopeSelector: ".source.js",
         });
         editor.setCursorBufferPosition([0, 0]);
@@ -1195,7 +1195,7 @@ describe("bracket matching", () => {
       });
 
       it("emits a buffer change event after the cursor is in place", () => {
-        atom.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
+        lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
           scopeSelector: ".source.js",
         });
 
@@ -1395,7 +1395,7 @@ describe("bracket matching", () => {
 
       describe("when the bracket-matcher.wrapSelectionsInBrackets is falsy globally", () => {
         it("does not wrap the selection in brackets", () => {
-          atom.config.set("bracket-matcher.wrapSelectionsInBrackets", false);
+          lumine.config.set("bracket-matcher.wrapSelectionsInBrackets", false);
           editor.setText("text");
           editor.moveToBottom();
           editor.selectToTop();
@@ -1411,8 +1411,8 @@ describe("bracket matching", () => {
 
       describe("when the bracket-matcher.wrapSelectionsInBrackets is falsy in scope", () => {
         it("does not wrap the selection in brackets", () => {
-          atom.config.set("bracket-matcher.wrapSelectionsInBrackets", true);
-          atom.config.set("bracket-matcher.wrapSelectionsInBrackets", false, {
+          lumine.config.set("bracket-matcher.wrapSelectionsInBrackets", true);
+          lumine.config.set("bracket-matcher.wrapSelectionsInBrackets", false, {
             scopeSelector: ".source.js",
           });
           editor.setText("text");
@@ -1680,7 +1680,7 @@ describe("bracket matching", () => {
 
       describe("when language.autoIndent is disabled", () => {
         beforeEach(() => {
-          atom.config.set("language.autoIndent", false);
+          lumine.config.set("language.autoIndent", false);
         });
 
         it("does not auto-indent the empty line and closing bracket", () => {
@@ -1698,7 +1698,7 @@ describe("bracket matching", () => {
     describe("when in language specific scope", () => {
       describe("string interpolation", () => {
         beforeEach(async () => {
-          await atom.packages.activatePackage("language-ruby");
+          await lumine.packages.activatePackage("language-ruby");
           buffer.setPath("foo.rb");
           let languageMode = buffer.getLanguageMode();
           languageMode.useAsyncParsing = false;
@@ -1802,7 +1802,7 @@ describe("bracket matching", () => {
     });
 
     it("does not delete end bracket even if it directly precedes a begin bracket if autocomplete is turned off globally", () => {
-      atom.config.set("bracket-matcher.autocompleteBrackets", false);
+      lumine.config.set("bracket-matcher.autocompleteBrackets", false);
       buffer.setText("");
       editor.setCursorBufferPosition([0, 0]);
       editor.insertText("{");
@@ -1815,8 +1815,8 @@ describe("bracket matching", () => {
     });
 
     it("does not delete end bracket even if it directly precedes a begin bracket if autocomplete is turned off in scope", () => {
-      atom.config.set("bracket-matcher.autocompleteBrackets", true);
-      atom.config.set("bracket-matcher.autocompleteBrackets", false, {
+      lumine.config.set("bracket-matcher.autocompleteBrackets", true);
+      lumine.config.set("bracket-matcher.autocompleteBrackets", false, {
         scopeSelector: ".source.js",
       });
       buffer.setText("");
@@ -1833,18 +1833,18 @@ describe("bracket matching", () => {
 
   describe("bracket-matcher:close-tag", () => {
     beforeEach(() => {
-      waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.html")));
+      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.html")));
 
       runs(() => {
-        editor = atom.workspace.getActiveTextEditor();
-        editorElement = atom.views.getView(editor);
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
         buffer = editor.buffer;
       });
     });
 
     it("closes the first unclosed tag", () => {
       editor.setCursorBufferPosition([5, 14]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([5, 18]);
       expect(
@@ -1857,8 +1857,8 @@ describe("bracket matching", () => {
 
     it("closes the following unclosed tags if called repeatedly", () => {
       editor.setCursorBufferPosition([5, 14]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([5, 22]);
       expect(
@@ -1871,34 +1871,34 @@ describe("bracket matching", () => {
 
     it("does not close any tag if no unclosed tag can be found at the insertion point", () => {
       editor.setCursorBufferPosition([5, 14]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       // closing all currently open tags
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
       editor.setCursorBufferPosition([13, 11]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
       editor.setCursorBufferPosition([15, 0]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       // positioning on an already closed tag
       editor.setCursorBufferPosition([11, 9]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
       expect(editor.getCursorBufferPosition()).toEqual([11, 9]);
     });
 
     it("does not get confused in case of nested identical tags -- tag not closing", () => {
       editor.setCursorBufferPosition([13, 11]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
     });
 
     it("does not get confused in case of nested identical tags -- tag closing", () => {
       editor.setCursorBufferPosition([13, 11]);
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
       expect(
@@ -1908,17 +1908,17 @@ describe("bracket matching", () => {
         ]),
       ).toEqual("</div>");
 
-      atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
     });
 
     it("does not get confused in case of nested self closing tags", () => {
-      waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
 
       runs(() => {
-        editor = atom.workspace.getActiveTextEditor();
-        editorElement = atom.views.getView(editor);
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
 
         editor.setText(`\
 <bar name="test">
@@ -1927,7 +1927,7 @@ describe("bracket matching", () => {
 `);
 
         editor.setCursorBufferPosition([2, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
         expect(editor.getCursorBufferPosition().row).toEqual(2);
         expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -1941,11 +1941,11 @@ describe("bracket matching", () => {
     });
 
     it("does not get confused in case of self closing tags after the cursor", () => {
-      waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
 
       runs(() => {
-        editor = atom.workspace.getActiveTextEditor();
-        editorElement = atom.views.getView(editor);
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
 
         editor.setText(`\
 <bar>
@@ -1957,7 +1957,7 @@ describe("bracket matching", () => {
 `);
 
         editor.setCursorBufferPosition([1, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
         expect(editor.getCursorBufferPosition().row).toEqual(1);
         expect(editor.getCursorBufferPosition().column).toEqual(0);
@@ -1971,11 +1971,11 @@ describe("bracket matching", () => {
     });
 
     it("does not get confused in case of nested self closing tags with `>` in their attributes", () => {
-      waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
 
       runs(() => {
-        editor = atom.workspace.getActiveTextEditor();
-        editorElement = atom.views.getView(editor);
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
 
         editor.setText(`\
 <bar name="test">
@@ -1984,7 +1984,7 @@ describe("bracket matching", () => {
 `);
 
         editor.setCursorBufferPosition([2, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
         expect(editor.getCursorBufferPosition().row).toEqual(2);
         expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -2001,7 +2001,7 @@ describe("bracket matching", () => {
 `);
 
         editor.setCursorBufferPosition([1, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
         expect(editor.getCursorBufferPosition().row).toEqual(1);
         expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -2015,11 +2015,11 @@ describe("bracket matching", () => {
     });
 
     it("does not get confused in case of self closing tags with `>` in their attributes after the cursor", () => {
-      waitsForPromise(() => atom.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
 
       runs(() => {
-        editor = atom.workspace.getActiveTextEditor();
-        editorElement = atom.views.getView(editor);
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
 
         editor.setText(`\
 <bar>
@@ -2031,7 +2031,7 @@ describe("bracket matching", () => {
 `);
 
         editor.setCursorBufferPosition([1, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
         expect(editor.getCursorBufferPosition().row).toEqual(1);
         expect(editor.getCursorBufferPosition().column).toEqual(0);
@@ -2049,7 +2049,7 @@ describe("bracket matching", () => {
     describe("when the cursor on the left side of an opening bracket", () => {
       beforeEach(() => {
         editor.setCursorBufferPosition([0, 28]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2085,7 +2085,7 @@ describe("bracket matching", () => {
     describe("when the cursor on the right side of an opening bracket", () => {
       beforeEach(() => {
         editor.setCursorBufferPosition([1, 30]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2121,7 +2121,7 @@ describe("bracket matching", () => {
     describe("when the cursor on the left side of an closing bracket", () => {
       beforeEach(() => {
         editor.setCursorBufferPosition([12, 0]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2157,7 +2157,7 @@ describe("bracket matching", () => {
     describe("when the cursor isn't near to a bracket", () => {
       beforeEach(() => {
         editor.setCursorBufferPosition([1, 5]);
-        atom.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("doesn't selects the brackets", () => {
@@ -2201,7 +2201,7 @@ describe("bracket matching", () => {
     });
 
     it("does skip over brackets that have already been skipped when alwaysSkipClosingPairs is set", () => {
-      atom.config.set("bracket-matcher.alwaysSkipClosingPairs", true);
+      lumine.config.set("bracket-matcher.alwaysSkipClosingPairs", true);
       editor.insertText("()");
       editor.moveLeft();
       editor.insertText(")");

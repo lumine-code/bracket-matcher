@@ -1,22 +1,22 @@
 {
   // :not([mini]) because these rewrite the buffer.
-  "atom-text-editor:not([mini])": {
+  "lumine-text-editor:not([mini])": {
     "ctrl-m": "bracket-matcher:go-to-matching-bracket",
     "ctrl-]": "bracket-matcher:remove-brackets-from-selection"
   },
   // A genuine keystroke divergence rather than a cmd/ctrl swap, and one block
   // per selector because a comma list is scored on its first branch alone.
-  ".platform-darwin atom-text-editor:not([mini])": {
+  ".platform-darwin lumine-text-editor:not([mini])": {
     "ctrl-cmd-m": "bracket-matcher:select-inside-brackets",
     "alt-cmd-.": "bracket-matcher:close-tag",
     "ctrl-backspace": "bracket-matcher:remove-matching-brackets"
   },
-  ".platform-win32 atom-text-editor:not([mini])": {
+  ".platform-win32 lumine-text-editor:not([mini])": {
     "ctrl-alt-,": "bracket-matcher:select-inside-brackets",
     "ctrl-alt-.": "bracket-matcher:close-tag",
     "ctrl-alt-backspace": "bracket-matcher:remove-matching-brackets"
   },
-  ".platform-linux atom-text-editor:not([mini])": {
+  ".platform-linux lumine-text-editor:not([mini])": {
     "ctrl-alt-,": "bracket-matcher:select-inside-brackets",
     "ctrl-alt-.": "bracket-matcher:close-tag",
     "ctrl-alt-backspace": "bracket-matcher:remove-matching-brackets"

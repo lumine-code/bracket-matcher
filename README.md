@@ -17,7 +17,7 @@ To install `bracket-matcher` search for _bracket-matcher_ in the Install pane of
 
 ## Commands
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `bracket-matcher:go-to-matching-bracket`: move the cursor to the matching bracket,
 - `bracket-matcher:go-to-enclosing-bracket`: move the cursor to the nearest enclosing bracket,

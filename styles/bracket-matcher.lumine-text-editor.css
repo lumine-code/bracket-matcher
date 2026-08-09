@@ -3,13 +3,13 @@
   box-sizing: border-box;
 }
 
-atom-text-editor.is-focused .line .bracket-matcher {
+lumine-text-editor.is-focused .line .bracket-matcher {
   text-decoration-line: underline;
   text-decoration-color: var(--syntax-cursor-color, currentColor);
   text-decoration-thickness: 1px;
 }
 
-atom-text-editor.is-focused .line-number.bracket-matcher.bracket-matcher {
+lumine-text-editor.is-focused .line-number.bracket-matcher.bracket-matcher {
   color: var(--syntax-gutter-text-color-selected);
   background-color: var(--syntax-gutter-background-color-selected);
 }
