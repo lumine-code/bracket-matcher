@@ -91,13 +91,33 @@ describe("bracket matching", () => {
       const bracketText = editorElement.querySelectorAll(".line .bracket-matcher");
       expect(Array.from(bracketText, (element) => element.textContent)).toEqual(["[", "]"]);
       for (const element of bracketText) {
-        expect(getComputedStyle(element).textDecorationLine).toContain("underline");
+        const style = getComputedStyle(element);
+        expect(style.textDecorationLine).toContain("underline");
+        expect(style.textUnderlineOffset).not.toBe("auto");
+        expect(style.textDecorationSkipInk).toBe("none");
       }
 
       const regions = editorElement.querySelectorAll(".highlight.bracket-matcher .region");
       expect(regions.length).toBe(2);
       for (const region of regions) {
         expect(getComputedStyle(region).borderBottomStyle).toBe("none");
+      }
+    });
+
+    it("draws normal editor underlines at the bottom of the line height", () => {
+      editor.update({ mini: false });
+      editor.setText("[m]");
+      editor.setCursorBufferPosition([0, 0]);
+      editorElement.classList.add("is-focused");
+      editorElement.getComponent().updateSync();
+      editorElement.removeAttribute("mini");
+
+      const lineBottom = editorElement.querySelector(".line").getBoundingClientRect().bottom;
+      const regions = editorElement.querySelectorAll(".highlight.bracket-matcher .region");
+      expect(regions.length).toBe(2);
+      for (const region of regions) {
+        expect(getComputedStyle(region).borderBottomStyle).toBe("solid");
+        expect(region.getBoundingClientRect().bottom).toBe(lineBottom);
       }
     });
 
