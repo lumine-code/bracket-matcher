@@ -81,6 +81,26 @@ describe("bracket matching", () => {
       expect(gutterDecorations[1].marker.getStartBufferPosition()).toEqual(endBufferPosition);
     }
 
+    it("underlines the bracket text instead of the full-height highlight regions", async () => {
+      editor.update({ mini: true });
+      editor.setText("[m]");
+      editor.setCursorBufferPosition([0, 0]);
+      editorElement.classList.add("is-focused");
+      await editorElement.getComponent().getNextUpdatePromise();
+
+      const bracketText = editorElement.querySelectorAll(".line .bracket-matcher");
+      expect(Array.from(bracketText, (element) => element.textContent)).toEqual(["[", "]"]);
+      for (const element of bracketText) {
+        expect(getComputedStyle(element).textDecorationLine).toContain("underline");
+      }
+
+      const regions = editorElement.querySelectorAll(".highlight.bracket-matcher .region");
+      expect(regions.length).toBe(2);
+      for (const region of regions) {
+        expect(getComputedStyle(region).borderBottomStyle).toBe("none");
+      }
+    });
+
     describe("when the cursor is before a starting pair", () => {
       it("highlights the starting pair and ending pair", () => {
         editor.moveToEndOfLine();
