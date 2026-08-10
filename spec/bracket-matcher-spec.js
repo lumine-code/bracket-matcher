@@ -14,33 +14,28 @@ function editorReady(languageMode) {
 describe("bracket matching", () => {
   let editorElement, editor, buffer, languageMode;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     lumine.config.set("bracket-matcher.autocompleteBrackets", true);
 
     // The commands are registered on lumine-workspace, so an editor a dispatch is
     // aimed at has to be inside the workspace rather than an orphan element.
     jasmine.attachToDOM(lumine.workspace.getElement());
 
-    waitsForPromise(() => lumine.packages.activatePackage("bracket-matcher"));
+    await lumine.packages.activatePackage("bracket-matcher");
 
-    waitsForPromise(() => lumine.packages.activatePackage("language-javascript"));
+    await lumine.packages.activatePackage("language-javascript");
 
-    waitsForPromise(() => lumine.packages.activatePackage("language-xml"));
+    await lumine.packages.activatePackage("language-xml");
 
-    waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.js")));
+    await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.js"));
 
-    waitsForPromise(() => {
-      let editor = lumine.workspace.getActiveTextEditor();
-      let languageMode = editor.getBuffer().getLanguageMode();
-      return languageMode.ready;
-    });
+    editor = lumine.workspace.getActiveTextEditor();
+    await editor.getBuffer().getLanguageMode().ready;
 
-    runs(() => {
-      editor = lumine.workspace.getActiveTextEditor();
-      editorElement = lumine.views.getView(editor);
-      buffer = editor.getBuffer();
-      languageMode = buffer.getLanguageMode();
-    });
+    editor = lumine.workspace.getActiveTextEditor();
+    editorElement = lumine.views.getView(editor);
+    buffer = editor.getBuffer();
+    languageMode = buffer.getLanguageMode();
   });
 
   describe("matching bracket highlighting", () => {
@@ -866,14 +861,10 @@ describe("bracket matching", () => {
     });
 
     describe("when there are multiple cursors", () => {
-      beforeEach(() => {
-        waitsForPromise(() =>
-          lumine.workspace.open(path.join(__dirname, "fixtures", "multiplecursor.md")),
-        );
-        runs(() => {
-          editor = lumine.workspace.getActiveTextEditor();
-          editorElement = lumine.views.getView(editor);
-        });
+      beforeEach(async () => {
+        await lumine.workspace.open(path.join(__dirname, "fixtures", "multiplecursor.md"));
+        editor = lumine.workspace.getActiveTextEditor();
+        editorElement = lumine.views.getView(editor);
       });
       it("selects text inside the multiple cursors", () => {
         editor.addCursorAtBufferPosition([0, 6]);
@@ -1852,14 +1843,12 @@ describe("bracket matching", () => {
   });
 
   describe("bracket-matcher:close-tag", () => {
-    beforeEach(() => {
-      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.html")));
+    beforeEach(async () => {
+      await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.html"));
 
-      runs(() => {
-        editor = lumine.workspace.getActiveTextEditor();
-        editorElement = lumine.views.getView(editor);
-        buffer = editor.buffer;
-      });
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
+      buffer = editor.buffer;
     });
 
     it("closes the first unclosed tag", () => {
@@ -1933,41 +1922,38 @@ describe("bracket matching", () => {
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
     });
 
-    it("does not get confused in case of nested self closing tags", () => {
-      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+    it("does not get confused in case of nested self closing tags", async () => {
+      await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-      runs(() => {
-        editor = lumine.workspace.getActiveTextEditor();
-        editorElement = lumine.views.getView(editor);
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
 
-        editor.setText(`\
+      editor.setText(`\
 <bar name="test">
   <foo value="15"/>
 \
 `);
 
-        editor.setCursorBufferPosition([2, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      editor.setCursorBufferPosition([2, 0]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
-        expect(editor.getCursorBufferPosition().row).toEqual(2);
-        expect(editor.getCursorBufferPosition().column).toEqual(6);
-        expect(
-          editor.getTextInRange([
-            [2, 0],
-            [2, 6],
-          ]),
-        ).toEqual("</bar>");
-      });
+      expect(editor.getCursorBufferPosition().row).toEqual(2);
+      expect(editor.getCursorBufferPosition().column).toEqual(6);
+      expect(
+        editor.getTextInRange([
+          [2, 0],
+          [2, 6],
+        ]),
+      ).toEqual("</bar>");
     });
 
-    it("does not get confused in case of self closing tags after the cursor", () => {
-      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+    it("does not get confused in case of self closing tags after the cursor", async () => {
+      await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-      runs(() => {
-        editor = lumine.workspace.getActiveTextEditor();
-        editorElement = lumine.views.getView(editor);
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
 
-        editor.setText(`\
+      editor.setText(`\
 <bar>
 
   <bar>
@@ -1976,72 +1962,68 @@ describe("bracket matching", () => {
 </bar>\
 `);
 
-        editor.setCursorBufferPosition([1, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      editor.setCursorBufferPosition([1, 0]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
-        expect(editor.getCursorBufferPosition().row).toEqual(1);
-        expect(editor.getCursorBufferPosition().column).toEqual(0);
-        expect(
-          editor.getTextInRange([
-            [1, 0],
-            [1, Infinity],
-          ]),
-        ).toEqual("");
-      });
+      expect(editor.getCursorBufferPosition().row).toEqual(1);
+      expect(editor.getCursorBufferPosition().column).toEqual(0);
+      expect(
+        editor.getTextInRange([
+          [1, 0],
+          [1, Infinity],
+        ]),
+      ).toEqual("");
     });
 
-    it("does not get confused in case of nested self closing tags with `>` in their attributes", () => {
-      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+    it("does not get confused in case of nested self closing tags with `>` in their attributes", async () => {
+      await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-      runs(() => {
-        editor = lumine.workspace.getActiveTextEditor();
-        editorElement = lumine.views.getView(editor);
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
 
-        editor.setText(`\
+      editor.setText(`\
 <bar name="test">
   <foo bar="test>1" baz="<>" value="15"/>
 \
 `);
 
-        editor.setCursorBufferPosition([2, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      editor.setCursorBufferPosition([2, 0]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
-        expect(editor.getCursorBufferPosition().row).toEqual(2);
-        expect(editor.getCursorBufferPosition().column).toEqual(6);
-        expect(
-          editor.getTextInRange([
-            [2, 0],
-            [2, 6],
-          ]),
-        ).toEqual("</bar>");
+      expect(editor.getCursorBufferPosition().row).toEqual(2);
+      expect(editor.getCursorBufferPosition().column).toEqual(6);
+      expect(
+        editor.getTextInRange([
+          [2, 0],
+          [2, 6],
+        ]),
+      ).toEqual("</bar>");
 
-        editor.setText(`\
+      editor.setText(`\
 <foo value="/>">
 \
 `);
 
-        editor.setCursorBufferPosition([1, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      editor.setCursorBufferPosition([1, 0]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
-        expect(editor.getCursorBufferPosition().row).toEqual(1);
-        expect(editor.getCursorBufferPosition().column).toEqual(6);
-        expect(
-          editor.getTextInRange([
-            [1, 0],
-            [1, 6],
-          ]),
-        ).toEqual("</foo>");
-      });
+      expect(editor.getCursorBufferPosition().row).toEqual(1);
+      expect(editor.getCursorBufferPosition().column).toEqual(6);
+      expect(
+        editor.getTextInRange([
+          [1, 0],
+          [1, 6],
+        ]),
+      ).toEqual("</foo>");
     });
 
-    it("does not get confused in case of self closing tags with `>` in their attributes after the cursor", () => {
-      waitsForPromise(() => lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml")));
+    it("does not get confused in case of self closing tags with `>` in their attributes after the cursor", async () => {
+      await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.xml"));
 
-      runs(() => {
-        editor = lumine.workspace.getActiveTextEditor();
-        editorElement = lumine.views.getView(editor);
+      editor = lumine.workspace.getActiveTextEditor();
+      editorElement = lumine.views.getView(editor);
 
-        editor.setText(`\
+      editor.setText(`\
 <bar>
 
   <bar>
@@ -2050,18 +2032,17 @@ describe("bracket matching", () => {
 </bar>\
 `);
 
-        editor.setCursorBufferPosition([1, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      editor.setCursorBufferPosition([1, 0]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
 
-        expect(editor.getCursorBufferPosition().row).toEqual(1);
-        expect(editor.getCursorBufferPosition().column).toEqual(0);
-        expect(
-          editor.getTextInRange([
-            [1, 0],
-            [1, Infinity],
-          ]),
-        ).toEqual("");
-      });
+      expect(editor.getCursorBufferPosition().row).toEqual(1);
+      expect(editor.getCursorBufferPosition().column).toEqual(0);
+      expect(
+        editor.getTextInRange([
+          [1, 0],
+          [1, Infinity],
+        ]),
+      ).toEqual("");
     });
   });
 
