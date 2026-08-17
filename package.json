@@ -94,12 +94,30 @@
       "description": "Always skip closing pairs in front of the cursor.",
       "type": "boolean",
       "default": false
+    },
+    "marker": {
+      "title": "Marker",
+      "description": "Settings of the brackets layer drawn on the scrollbar and minimap by the marker hub.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "description": "Show matching bracket positions on the scrollbar and minimap.",
+          "type": "boolean",
+          "default": true
+        }
+      }
     }
   },
   "providedServices": {
     "bracket-matcher": {
       "versions": {
         "1.0.0": "provideBracketMatcher"
+      }
+    },
+    "marker.layer": {
+      "versions": {
+        "1.0.0": "provideMarkerLayer"
       }
     }
   },

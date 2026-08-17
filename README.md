@@ -10,6 +10,7 @@ Highlights and jumps between matching brackets, and autocompletes brackets and q
 - **Selection wrapping**: wraps selected text in brackets or quotes when the opening character is typed.
 - **Scoped pairs**: customizes matching pairs globally or per language.
 - **Universal editors**: matches brackets in every registered text editor, including docks and panels.
+- **Scrollbar markers**: shows the matching bracket positions on the scrollbar and minimap via the marker hub.
 
 ## Installation
 
@@ -44,6 +45,7 @@ Matching pairs can be customized per language through scoped settings in your `c
 ## Services
 
 - [`bracket-matcher`](docs/bracket-matcher.md): provided to expose the current match — `getMatchRanges(editor)` returns the highlighted bracket pair's buffer ranges, and `observe(callback)` reports every match change, enabling consumers such as scrollbar maps to display bracket positions.
+- `marker.layer`: provided to draw matching bracket positions on the editor's overview maps (scrollbar, minimap).
 
 ## Contributing
 
