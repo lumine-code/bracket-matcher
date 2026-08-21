@@ -31,6 +31,9 @@
     "You can jump to the bracket matching the one at the cursor with {{ 'bracket-matcher:go-to-matching-bracket' | keystroke }}",
     "You can select everything inside the brackets around the cursor with {{ 'bracket-matcher:select-inside-brackets' | keystroke }}"
   ],
+  "specPackages": [
+    "language-ruby"
+  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
