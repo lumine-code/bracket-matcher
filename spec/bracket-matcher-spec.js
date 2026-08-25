@@ -76,6 +76,31 @@ describe("bracket matching", () => {
       expect(gutterDecorations[1].marker.getStartBufferPosition()).toEqual(endBufferPosition);
     }
 
+    it("updates bracket matching once when a multi-selection moves", () => {
+      editor.setSelectedBufferRanges([
+        [
+          [0, 0],
+          [0, 0],
+        ],
+        [
+          [1, 0],
+          [1, 0],
+        ],
+        [
+          [2, 0],
+          [2, 0],
+        ],
+      ]);
+      const mainModule = lumine.packages.getActivePackage("bracket-matcher").mainModule;
+      const didChange = jasmine.createSpy("didChange");
+      const subscription = mainModule.provideBracketMatcher().observe(didChange);
+
+      editor.selectRight();
+
+      subscription.dispose();
+      expect(didChange.calls.count()).toBe(1);
+    });
+
     it("underlines the bracket text instead of the full-height highlight regions", async () => {
       editor.update({ mini: true });
       editor.setText("[m]");
