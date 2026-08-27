@@ -1163,7 +1163,7 @@ describe("bracket matching", () => {
     beforeEach(async () => {
       editor.buffer.setText("");
       await editorReady(languageMode);
-      lumine.config.set("language.autoIndent", true);
+      lumine.config.set("editor.autoIndent", true);
     });
 
     describe("when more than one character is inserted", () => {
@@ -1714,9 +1714,9 @@ describe("bracket matching", () => {
         });
       });
 
-      describe("when language.autoIndent is disabled", () => {
+      describe("when editor.autoIndent is disabled", () => {
         beforeEach(() => {
-          lumine.config.set("language.autoIndent", false);
+          lumine.config.set("editor.autoIndent", false);
         });
 
         it("does not auto-indent the empty line and closing bracket", () => {
