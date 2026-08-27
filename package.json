@@ -44,6 +44,7 @@
     "autocompleteCharacters": {
       "title": "Autocomplete Characters",
       "description": "Autocompleted characters treated as matching pairs, such as `()`, and `{}`.",
+      "scopeResolution": "grammar",
       "type": "array",
       "items": {
         "type": "string"
@@ -64,6 +65,7 @@
     "pairsWithExtraNewline": {
       "title": "Pairs With Extra Newline",
       "description": "Automatically add a newline between the pair when enter is pressed.",
+      "scopeResolution": "grammar",
       "type": "array",
       "items": {
         "type": "string"
@@ -77,24 +79,28 @@
     "autocompleteBrackets": {
       "title": "Autocomplete Brackets",
       "description": "Autocomplete bracket and quote characters, such as `(` and `)`, and `\"`.",
+      "scopeResolution": "grammar",
       "type": "boolean",
       "default": true
     },
     "wrapSelectionsInBrackets": {
       "title": "Wrap Selections In Brackets",
       "description": "Wrap selected text in brackets or quotes when the editor contains selections and the opening bracket or quote is typed.",
+      "scopeResolution": "grammar",
       "type": "boolean",
       "default": true
     },
     "highlightMatchingLineNumber": {
       "title": "Highlight Matching Line Number",
       "description": "Highlight the line number of the matching bracket.",
+      "scopeResolution": "grammar",
       "type": "boolean",
       "default": false
     },
     "alwaysSkipClosingPairs": {
       "title": "Always Skip Closing Pairs",
       "description": "Always skip closing pairs in front of the cursor.",
+      "scopeResolution": "grammar",
       "type": "boolean",
       "default": false
     },
