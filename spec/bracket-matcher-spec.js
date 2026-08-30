@@ -642,6 +642,25 @@ describe("bracket matching", () => {
   });
 
   describe("when bracket-matcher:go-to-matching-bracket is triggered", () => {
+    it("ignores a mini-editor target and acts on the active file editor", () => {
+      const miniEditor = lumine.workspace.buildTextEditor({ mini: true });
+      const miniElement = lumine.views.getView(miniEditor);
+      lumine.workspace.getElement().appendChild(miniElement);
+      miniEditor.setText("{}");
+      miniEditor.setCursorBufferPosition([0, 0]);
+      editor.moveToEndOfLine();
+      editor.moveLeft();
+
+      try {
+        lumine.commands.dispatch(miniElement, "bracket-matcher:go-to-matching-bracket");
+
+        expect(editor.getCursorBufferPosition()).toEqual([12, 1]);
+        expect(miniEditor.getCursorBufferPosition()).toEqual([0, 0]);
+      } finally {
+        miniEditor.destroy();
+      }
+    });
+
     describe("when the cursor is before the starting pair", () => {
       it("moves the cursor to after the ending pair", () => {
         editor.moveToEndOfLine();
