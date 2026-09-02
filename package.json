@@ -32,7 +32,12 @@
     "You can select everything inside the brackets around the cursor with {{ 'bracket-matcher:select-inside-brackets' | keystroke }}"
   ],
   "specPackages": [
-    "language-ruby"
+    "language-gfm",
+    "language-html",
+    "language-javascript",
+    "language-regex",
+    "language-ruby",
+    "language-xml"
   ],
   "scripts": {
     "test": "lumine --test spec",
@@ -129,9 +134,6 @@
         "1.0.0": "provideMarkerLayer"
       }
     }
-  },
-  "dependencies": {
-    "@lumine-code/second-mate": "github:lumine-code/second-mate#7f25255c610cb050d9e64821b0107f00754903b2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

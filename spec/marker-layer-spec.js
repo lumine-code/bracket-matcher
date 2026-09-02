@@ -29,6 +29,7 @@ describe("bracket-matcher marker layer", () => {
 
   beforeEach(async () => {
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
+    await lumine.packages.activatePackage("language-javascript");
     const pack = await lumine.packages.activatePackage("bracket-matcher");
     mainModule = pack.mainModule;
     provider = mainModule.provideMarkerLayer();
@@ -39,7 +40,10 @@ describe("bracket-matcher marker layer", () => {
     mainModule.markerLayerConnection.dispose();
 
     editor = await lumine.workspace.open();
+    editor.setGrammar(lumine.grammars.grammarForScopeName("source.js"));
     editor.setText("(hello)\nworld\n{\n  body\n}\n");
+    await editor.languageMode.ready;
+    await editor.languageMode.atTransactionEnd();
     layers = [];
     layer = makeLayer(editor);
     consumerDisposable = mainModule.markerLayer.connect(api);

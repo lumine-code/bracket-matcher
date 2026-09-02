@@ -1,14 +1,9 @@
-const { Point, TextBuffer } = require("lumine");
+const { Point } = require("lumine");
 
-const HAS_NEW_TEXT_BUFFER_VERSION = new TextBuffer().getLanguageMode().bufferDidFinishTransaction;
 const path = require("path");
 
 function editorReady(languageMode) {
-  if (languageMode.atTransactionEnd) {
-    return languageMode.atTransactionEnd();
-  } else {
-    return Promise.resolve();
-  }
+  return languageMode.atTransactionEnd();
 }
 
 describe("bracket matching", () => {
@@ -22,6 +17,8 @@ describe("bracket matching", () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
 
     await lumine.packages.activatePackage("bracket-matcher");
+
+    await lumine.packages.activatePackage("language-regex");
 
     await lumine.packages.activatePackage("language-javascript");
 
@@ -323,6 +320,12 @@ describe("bracket matching", () => {
         editor.setText("(/[)]/)");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
+        await conditionPromise(() =>
+          editor
+            .scopeDescriptorForBufferPosition([0, 2])
+            .getScopesArray()
+            .some((scope) => scope.includes("regexp")),
+        );
         expectHighlights([0, 0], [0, 6]);
 
         editor.setCursorBufferPosition([0, 7]);
@@ -906,9 +909,12 @@ describe("bracket matching", () => {
 
     describe("when there are multiple cursors", () => {
       beforeEach(async () => {
+        await lumine.packages.activatePackage("language-gfm");
         await lumine.workspace.open(path.join(__dirname, "fixtures", "multiplecursor.md"));
         editor = lumine.workspace.getActiveTextEditor();
         editorElement = lumine.views.getView(editor);
+        await editor.languageMode.ready;
+        await editor.languageMode.atTransactionEnd();
       });
       it("selects text inside the multiple cursors", () => {
         editor.addCursorAtBufferPosition([0, 6]);
@@ -2255,11 +2261,6 @@ describe("bracket matching", () => {
   });
 
   function forEachLanguageWithTags(callback) {
-    // TODO: remove this conditional after 1.33 stable is released.
-    if (HAS_NEW_TEXT_BUFFER_VERSION) {
-      ["text.html.basic", "text.xml"].forEach(callback);
-    } else {
-      callback("text.xml");
-    }
+    ["text.html.basic", "text.xml"].forEach(callback);
   }
 });
