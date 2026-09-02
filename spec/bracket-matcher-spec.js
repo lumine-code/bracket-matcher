@@ -1129,7 +1129,7 @@ describe("bracket matching", () => {
     });
   });
 
-  describe("matching bracket deletion", () => {
+  describe("removing brackets from a selection", () => {
     beforeEach(() => {
       editor.buffer.setText("");
     });
@@ -1852,7 +1852,7 @@ describe("bracket matching", () => {
     });
   });
 
-  describe("matching bracket deletion", () => {
+  describe("backspacing an automatically matched bracket", () => {
     it("deletes the end bracket when it directly precedes a begin bracket that is being backspaced", () => {
       buffer.setText("");
       editor.setCursorBufferPosition([0, 0]);
