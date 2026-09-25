@@ -37,6 +37,7 @@
     "language-javascript",
     "language-regex",
     "language-ruby",
+    "language-text",
     "language-xml"
   ],
   "scripts": {

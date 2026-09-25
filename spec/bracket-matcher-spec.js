@@ -138,6 +138,26 @@ describe("bracket matching", () => {
       }
     });
 
+    it("matches nested brackets in the plain-text grammar", async () => {
+      await lumine.packages.activatePackage("language-text");
+      editor.setGrammar(lumine.grammars.grammarForScopeName("text.plain"));
+      editor.setText("plain (outer (inner) tail)");
+      await editor.whenGrammarSettled();
+
+      editor.setCursorBufferPosition([0, 6]);
+      expectHighlights([0, 6], [0, 25]);
+
+      editor.setCursorBufferPosition([0, 13]);
+      expectHighlights([0, 13], [0, 19]);
+
+      editor.setCursorBufferPosition([0, 26]);
+      expectHighlights([0, 25], [0, 6]);
+
+      editor.setCursorBufferPosition([0, 13]);
+      lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+      expect(editor.getCursorBufferPosition()).toEqual(Point(0, 20));
+    });
+
     describe("when the cursor is before a starting pair", () => {
       it("highlights the starting pair and ending pair", () => {
         editor.moveToEndOfLine();
