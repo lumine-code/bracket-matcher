@@ -97,7 +97,7 @@
       "description": "Highlight the line number of the matching bracket.",
       "scopeResolution": "grammar",
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "alwaysSkipClosingPairs": {
       "title": "Always Skip Closing Pairs",
