@@ -1,5 +1,5 @@
 .marker.marker-brackets {
-  /* Fallback for UI themes that do not define --accent-color. */
-  background-color: var(--accent-color, hsl(220deg 100% 60%));
+  /* Fallback for UI themes that do not define --accent-indicator-color. */
+  background-color: var(--accent-indicator-color, hsl(220deg 100% 60%));
   z-index: 19;
 }
