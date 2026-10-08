@@ -2,6 +2,8 @@
 
 Highlights and jumps between matching brackets, and autocompletes brackets and quotes.
 
+Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/bracket-matcher`).
+
 ## Features
 
 - **Bracket highlighting**: highlights the bracket matching the `(){}[]` character under the cursor.
