@@ -34,13 +34,13 @@ Commands available in `lumine-workspace`:
 
 Matching pairs can be customized per language through scoped settings in your `config.json`, overriding the package defaults. Changes take effect immediately. For example:
 
-```jsonc
+```json
 {
   ".rust.source": {
     "bracket-matcher": {
-      "autocompleteCharacters": ["()", "[]", "{}", "<>", "\"\"", "``"],
-    },
-  },
+      "autocompleteCharacters": ["()", "[]", "{}", "<>", "\"\"", "``"]
+    }
+  }
 }
 ```
 
