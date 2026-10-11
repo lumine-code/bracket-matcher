@@ -31,4 +31,21 @@ describe("Bracket Matcher cleared selection matches", () => {
     editor.insertText("[");
     expect(editor.getText()).toBe("[one]\nnoise");
   });
+  it("uses the live shared scroll zone when jumping between brackets", () => {
+    const requests = [];
+    const subscription = editor.onDidRequestAutoscroll((request) => requests.push(request));
+    try {
+      lumine.config.set("editor.scrollZone", [20, 70]);
+      lumine.commands.dispatch(editor.getElement(), "bracket-matcher:go-to-matching-bracket");
+      expect(editor.getCursorBufferPosition()).toEqual([0, 5]);
+      expect(requests.at(-1).options.mode).toEqual([20, 70]);
+
+      lumine.config.set("editor.scrollZone", [30, 80]);
+      lumine.commands.dispatch(editor.getElement(), "bracket-matcher:go-to-matching-bracket");
+      expect(editor.getCursorBufferPosition()).toEqual([0, 0]);
+      expect(requests.at(-1).options.mode).toEqual([30, 80]);
+    } finally {
+      subscription.dispose();
+    }
+  });
 });
