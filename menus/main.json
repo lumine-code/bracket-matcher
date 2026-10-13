@@ -39,11 +39,15 @@
       "submenu": [
         {
           "label": "Select Inside Brackets",
-          "command": "bracket-matcher:select-inside-brackets"
+          "command": "bracket-matcher:select-inside-brackets",
+          "group": "units",
+          "order": 30
         },
         {
           "label": "Select Matching Brackets",
-          "command": "bracket-matcher:select-matching-brackets"
+          "command": "bracket-matcher:select-matching-brackets",
+          "group": "units",
+          "order": 40
         }
       ]
     },
@@ -52,7 +56,9 @@
       "submenu": [
         {
           "label": "Go to Matching Bracket",
-          "command": "bracket-matcher:go-to-matching-bracket"
+          "command": "bracket-matcher:go-to-matching-bracket",
+          "group": "navigation",
+          "order": 30
         }
       ]
     }
