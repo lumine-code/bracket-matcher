@@ -40,6 +40,19 @@
         {
           "label": "Select Inside Brackets",
           "command": "bracket-matcher:select-inside-brackets"
+        },
+        {
+          "label": "Select Matching Brackets",
+          "command": "bracket-matcher:select-matching-brackets"
+        }
+      ]
+    },
+    {
+      "label": "Search",
+      "submenu": [
+        {
+          "label": "Go to Matching Bracket",
+          "command": "bracket-matcher:go-to-matching-bracket"
         }
       ]
     }
