@@ -1,0 +1,16 @@
+{
+  "title": "bracket-matcher",
+  "description": "Select the contents of matching brackets.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "d2b80462c9b6098eed77e35c3a2c3f2996d4257e",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Select the contents of matching brackets.",
+      "width": 1100,
+      "height": 340
+    }
+  ]
+}

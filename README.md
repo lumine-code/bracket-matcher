@@ -14,6 +14,8 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/b
 - **Universal editors**: matches brackets in every registered text editor, including docks and panels.
 - **Scrollbar markers**: shows the matching bracket positions on the scrollbar and minimap via the marker hub.
 
+![Select the contents of matching brackets.](.github/demo.png)
+
 ## Installation
 
 To install `bracket-matcher` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/bracket-matcher`.
