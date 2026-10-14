@@ -1,16 +1,61 @@
 {
   "title": "bracket-matcher",
   "description": "Select the contents of matching brackets.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "d2b80462c9b6098eed77e35c3a2c3f2996d4257e",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "13f15d33fd5f155a92425931134dea94273e11f5",
+  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
   "mode": "normal",
   "fontSettings": "default",
+  "scenario": "demo.js",
+  "recipeHash": "449a04a61cc712c6dc479b7737a596920c86fe8dc2f11cd09c7daefa8a6ff65d",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1100, "height": 340 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "8be8f86075ad93df038610d82b3ac6d99329957d",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "package": {
+      "revision": "13f15d33fd5f155a92425931134dea94273e11f5",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "bracket-matcher": {
+      "revision": "13f15d33fd5f155a92425931134dea94273e11f5",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "one-theme": {
+      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "usage/signal.js",
+      "sha256": "35d00b63ce6c5948a12ece4c8f33f07489f0a45feff6b53d6fcbd1477badc688"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Select the contents of matching brackets.",
       "width": 1100,
-      "height": 340
+      "height": 340,
+      "sha256": "fdb138cf2f0844af5e51f66ba757087c65866b086f7e062b099485c7cf41d831"
     }
   ]
 }
