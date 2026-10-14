@@ -52,7 +52,7 @@
       ]
     },
     {
-      "label": "Search",
+      "label": "Go",
       "submenu": [
         {
           "label": "Go to Matching Bracket",
