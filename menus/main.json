@@ -7,7 +7,7 @@
           "label": "Bracket Matcher",
           "submenu": [
             {
-              "label": "Go To Matching Bracket",
+              "label": "Go to Matching Bracket",
               "command": "bracket-matcher:go-to-matching-bracket"
             },
             {
@@ -15,8 +15,8 @@
               "command": "bracket-matcher:select-inside-brackets"
             },
             {
-              "label": "Remove Brackets From Selection",
-              "command": "bracket-matcher:remove-brackets-from-selection"
+              "label": "Select Matching Brackets",
+              "command": "bracket-matcher:select-matching-brackets"
             },
             {
               "label": "Close Current Tag",
@@ -27,8 +27,8 @@
               "command": "bracket-matcher:remove-matching-brackets"
             },
             {
-              "label": "Select Matching Brackets",
-              "command": "bracket-matcher:select-matching-brackets"
+              "label": "Remove Brackets from Selection",
+              "command": "bracket-matcher:remove-brackets-from-selection"
             }
           ]
         }
