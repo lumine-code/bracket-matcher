@@ -54,6 +54,31 @@ describe("bracket-matcher command scopes", () => {
         .toBe(!mutators.has(command));
   });
 
+  it("does not consume mutation shortcuts in a read-only editor", () => {
+    const element = editor.getElement();
+    for (const name of ["close-tag", "remove-brackets-from-selection", "remove-matching-brackets"])
+      expect(
+        lumine.keymaps.findKeyBindings({ target: element, command: `bracket-matcher:${name}` })
+          .length,
+      )
+        .withContext(name)
+        .toBeGreaterThan(0);
+    element.setAttribute("readonly", "");
+    for (const name of ["close-tag", "remove-brackets-from-selection", "remove-matching-brackets"])
+      expect(
+        lumine.keymaps.findKeyBindings({ target: element, command: `bracket-matcher:${name}` }),
+      )
+        .withContext(name)
+        .toEqual([]);
+    for (const name of ["go-to-matching-bracket", "select-inside-brackets"])
+      expect(
+        lumine.keymaps.findKeyBindings({ target: element, command: `bracket-matcher:${name}` })
+          .length,
+      )
+        .withContext(name)
+        .toBeGreaterThan(0);
+  });
+
   it("does not offer local actions in an empty workspace", () => {
     editor.destroy();
     for (const command of commands)
