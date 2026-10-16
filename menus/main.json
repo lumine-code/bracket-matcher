@@ -25,10 +25,6 @@
             {
               "label": "Remove Matching Brackets",
               "command": "bracket-matcher:remove-matching-brackets"
-            },
-            {
-              "label": "Remove Brackets from Selection",
-              "command": "bracket-matcher:remove-brackets-from-selection"
             }
           ]
         }

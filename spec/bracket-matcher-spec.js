@@ -12,8 +12,6 @@ describe("bracket matching", () => {
   beforeEach(async () => {
     lumine.config.set("bracket-matcher.autocompleteBrackets", true);
 
-    // The commands are registered on lumine-workspace, so an editor a dispatch is
-    // aimed at has to be inside the workspace rather than an orphan element.
     jasmine.attachToDOM(lumine.workspace.getElement());
 
     await lumine.packages.activatePackage("bracket-matcher");
@@ -665,7 +663,7 @@ describe("bracket matching", () => {
   });
 
   describe("when bracket-matcher:go-to-matching-bracket is triggered", () => {
-    it("ignores a mini-editor target and acts on the active file editor", () => {
+    it("does not forward a mini-editor target to the active file editor", () => {
       const miniEditor = lumine.workspace.buildTextEditor({ mini: true });
       const miniElement = lumine.views.getView(miniEditor);
       lumine.workspace.getElement().appendChild(miniElement);
@@ -673,11 +671,15 @@ describe("bracket matching", () => {
       miniEditor.setCursorBufferPosition([0, 0]);
       editor.moveToEndOfLine();
       editor.moveLeft();
+      const position = editor.getCursorBufferPosition();
 
       try {
+        expect(
+          lumine.commands.canDispatch(miniElement, "bracket-matcher:go-to-matching-bracket"),
+        ).toBe(false);
         lumine.commands.dispatch(miniElement, "bracket-matcher:go-to-matching-bracket");
 
-        expect(editor.getCursorBufferPosition()).toEqual([12, 1]);
+        expect(editor.getCursorBufferPosition()).toEqual(position);
         expect(miniEditor.getCursorBufferPosition()).toEqual([0, 0]);
       } finally {
         miniEditor.destroy();

@@ -22,12 +22,15 @@ To install `bracket-matcher` search for it in the Install pane of the Lumine set
 
 ## Commands
 
-Commands available in `lumine-workspace`:
+Commands available in `lumine-text-editor:not([mini])`:
 
 - `bracket-matcher:go-to-matching-bracket`: move the cursor to the matching bracket,
 - `bracket-matcher:go-to-enclosing-bracket`: move the cursor to the nearest enclosing bracket,
 - `bracket-matcher:select-inside-brackets`: select the text inside the current brackets,
-- `bracket-matcher:select-matching-brackets`: select both matching brackets,
+- `bracket-matcher:select-matching-brackets`: select both matching brackets.
+
+Commands available in `lumine-text-editor:not([mini]):not([readonly])`:
+
 - `bracket-matcher:remove-matching-brackets`: remove both matching brackets,
 - `bracket-matcher:remove-brackets-from-selection`: remove the brackets surrounding the selection,
 - `bracket-matcher:close-tag`: close the current XML/HTML tag.
