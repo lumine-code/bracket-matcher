@@ -81,6 +81,43 @@ describe("bracket-matcher marker layer", () => {
     expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
   });
 
+  it("seeds the current match when a layer attaches after the cursor moved", () => {
+    editor.setCursorBufferPosition([2, 0]);
+    layer.disposables.dispose();
+
+    const replacement = makeLayer(editor);
+    replacement.updateSync();
+
+    expect(replacement.items).toEqual([{ row: 2 }, { row: 4 }]);
+  });
+
+  it("seeds existing layers when the bracket service reconnects", () => {
+    consumerDisposable.dispose();
+    editor.setCursorBufferPosition([2, 0]);
+    layer.items = [];
+
+    consumerDisposable = mainModule.markerLayer.connect(api);
+
+    expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
+  });
+
+  it("places both brackets on their exact screen rows within a wrapped buffer line", async () => {
+    editor.setText(`prefix ${"word ".repeat(6)}(${"word ".repeat(12)})`);
+    await editor.languageMode.atTransactionEnd();
+    editor.setSoftWrapped(true);
+    editor.displayLayer.reset({ softWrapColumn: 20 });
+    const openColumn = editor.lineTextForBufferRow(0).indexOf("(");
+    const closeColumn = editor.lineTextForBufferRow(0).indexOf(")");
+
+    editor.setCursorBufferPosition([0, openColumn]);
+
+    const openRow = editor.screenPositionForBufferPosition([0, openColumn]).row;
+    const closeRow = editor.screenPositionForBufferPosition([0, closeColumn]).row;
+    expect(openRow).toBeGreaterThan(0);
+    expect(closeRow).toBeGreaterThan(openRow);
+    expect(layer.items).toEqual([{ row: openRow }, { row: closeRow }]);
+  });
+
   it("clears the markers when the cursor leaves the bracket pair", () => {
     editor.setCursorBufferPosition([2, 0]);
     expect(layer.items.length).toBe(2);
@@ -110,5 +147,44 @@ describe("bracket-matcher marker layer", () => {
     layer.update.calls.reset();
     emitter.emit("match", editor);
     expect(layer.update).not.toHaveBeenCalled();
+  });
+
+  it("clears the current match when the service disconnects", () => {
+    editor.setCursorBufferPosition([2, 0]);
+    expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
+
+    consumerDisposable.dispose();
+
+    expect(layer.items).toEqual([]);
+    layer.disposables.dispose();
+    const replacement = makeLayer(editor);
+    replacement.updateSync();
+    expect(replacement.items).toEqual([]);
+  });
+
+  it("ignores callbacks and cleanup from a replaced connection to the same facade", () => {
+    consumerDisposable.dispose();
+    const callbacks = [];
+    const observe = api.observe;
+    spyOn(api, "observe").and.callFake((callback) => {
+      callbacks.push(callback);
+      return observe(callback);
+    });
+    const previous = mainModule.markerLayer.connect(api);
+    consumerDisposable = mainModule.markerLayer.connect(api);
+    editor.setCursorBufferPosition([2, 0]);
+    const match = api.getMatchRanges(editor);
+    layer.update.calls.reset();
+
+    callbacks[0](editor, null);
+    previous.dispose();
+
+    expect(layer.update).not.toHaveBeenCalled();
+    expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
+    consumerDisposable.dispose();
+    layer.update.calls.reset();
+    callbacks[1](editor, match);
+    expect(layer.update).not.toHaveBeenCalled();
+    expect(layer.items).toEqual([]);
   });
 });
