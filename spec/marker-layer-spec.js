@@ -2,6 +2,11 @@ const { CompositeDisposable } = require("lumine");
 
 describe("bracket-matcher marker layer", () => {
   let editor, mainModule, provider, layer, layers, api, consumerDisposable;
+  let waitForMatching;
+  async function moveCursor(position) {
+    editor.setCursorBufferPosition(position);
+    await waitForMatching(editor);
+  }
 
   // Minimal stand-in for the layer object a renderer passes to `initialize` and
   // `getItems` (see lib/layer.js in the marker package).
@@ -28,9 +33,11 @@ describe("bracket-matcher marker layer", () => {
   }
 
   beforeEach(async () => {
+    jasmine.useRealClock();
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     await lumine.packages.activatePackage("language-javascript");
     const pack = await lumine.packages.activatePackage("bracket-matcher");
+    waitForMatching = require("./helpers/async-matching")(pack);
     mainModule = pack.mainModule;
     provider = mainModule.provideMarkerLayer();
     api = mainModule.provideBracketMatcher();
@@ -44,6 +51,8 @@ describe("bracket-matcher marker layer", () => {
     editor.setText("(hello)\nworld\n{\n  body\n}\n");
     await editor.languageMode.ready;
     await editor.languageMode.atTransactionEnd();
+    editor.setCursorBufferPosition([1, 2]);
+    await waitForMatching(editor);
     layers = [];
     layer = makeLayer(editor);
     consumerDisposable = mainModule.markerLayer.connect(api);
@@ -70,19 +79,19 @@ describe("bracket-matcher marker layer", () => {
     expect(api.getMatchRanges(editor)).toBeNull();
   });
 
-  it("marks a single row when the matched pair sits on one line", () => {
-    editor.setCursorBufferPosition([0, 0]);
+  it("marks a single row when the matched pair sits on one line", async () => {
+    await moveCursor([0, 0]);
     expect(layer.update).toHaveBeenCalled();
     expect(layer.items).toEqual([{ row: 0 }]);
   });
 
-  it("marks both rows of a multi-line bracket pair", () => {
-    editor.setCursorBufferPosition([2, 0]);
+  it("marks both rows of a multi-line bracket pair", async () => {
+    await moveCursor([2, 0]);
     expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
   });
 
-  it("seeds the current match when a layer attaches after the cursor moved", () => {
-    editor.setCursorBufferPosition([2, 0]);
+  it("seeds the current match when a layer attaches after the cursor moved", async () => {
+    await moveCursor([2, 0]);
     layer.disposables.dispose();
 
     const replacement = makeLayer(editor);
@@ -91,9 +100,9 @@ describe("bracket-matcher marker layer", () => {
     expect(replacement.items).toEqual([{ row: 2 }, { row: 4 }]);
   });
 
-  it("seeds existing layers when the bracket service reconnects", () => {
+  it("seeds existing layers when the bracket service reconnects", async () => {
     consumerDisposable.dispose();
-    editor.setCursorBufferPosition([2, 0]);
+    await moveCursor([2, 0]);
     layer.items = [];
 
     consumerDisposable = mainModule.markerLayer.connect(api);
@@ -109,7 +118,7 @@ describe("bracket-matcher marker layer", () => {
     const openColumn = editor.lineTextForBufferRow(0).indexOf("(");
     const closeColumn = editor.lineTextForBufferRow(0).indexOf(")");
 
-    editor.setCursorBufferPosition([0, openColumn]);
+    await moveCursor([0, openColumn]);
 
     const openRow = editor.screenPositionForBufferPosition([0, openColumn]).row;
     const closeRow = editor.screenPositionForBufferPosition([0, closeColumn]).row;
@@ -118,10 +127,10 @@ describe("bracket-matcher marker layer", () => {
     expect(layer.items).toEqual([{ row: openRow }, { row: closeRow }]);
   });
 
-  it("clears the markers when the cursor leaves the bracket pair", () => {
-    editor.setCursorBufferPosition([2, 0]);
+  it("clears the markers when the cursor leaves the bracket pair", async () => {
+    await moveCursor([2, 0]);
     expect(layer.items.length).toBe(2);
-    editor.setCursorBufferPosition([1, 2]);
+    await moveCursor([1, 2]);
     expect(layer.items).toEqual([]);
   });
 
@@ -149,8 +158,8 @@ describe("bracket-matcher marker layer", () => {
     expect(layer.update).not.toHaveBeenCalled();
   });
 
-  it("clears the current match when the service disconnects", () => {
-    editor.setCursorBufferPosition([2, 0]);
+  it("clears the current match when the service disconnects", async () => {
+    await moveCursor([2, 0]);
     expect(layer.items).toEqual([{ row: 2 }, { row: 4 }]);
 
     consumerDisposable.dispose();
@@ -162,7 +171,7 @@ describe("bracket-matcher marker layer", () => {
     expect(replacement.items).toEqual([]);
   });
 
-  it("ignores callbacks and cleanup from a replaced connection to the same facade", () => {
+  it("ignores callbacks and cleanup from a replaced connection to the same facade", async () => {
     consumerDisposable.dispose();
     const callbacks = [];
     const observe = api.observe;
@@ -172,7 +181,7 @@ describe("bracket-matcher marker layer", () => {
     });
     const previous = mainModule.markerLayer.connect(api);
     consumerDisposable = mainModule.markerLayer.connect(api);
-    editor.setCursorBufferPosition([2, 0]);
+    await moveCursor([2, 0]);
     const match = api.getMatchRanges(editor);
     layer.update.calls.reset();
 

@@ -2,19 +2,33 @@ const { Point } = require("lumine");
 
 const path = require("path");
 
-function editorReady(languageMode) {
-  return languageMode.atTransactionEnd();
+async function editorReady(languageMode) {
+  await languageMode.atTransactionEnd();
+  await languageMode.refresh?.();
 }
 
 describe("bracket matching", () => {
   let editorElement, editor, buffer, languageMode;
+  let waitForMatching;
+
+  async function dispatchAndWait(...args) {
+    const result = await lumine.commands.dispatch(...args);
+    await waitForMatching(editor);
+    return result;
+  }
+  async function insertTextAndWait(text) {
+    editor.insertText(text);
+    await waitForMatching(editor);
+  }
 
   beforeEach(async () => {
+    jasmine.useRealClock();
     lumine.config.set("bracket-matcher.autocompleteBrackets", true);
 
     jasmine.attachToDOM(lumine.workspace.getElement());
 
-    await lumine.packages.activatePackage("bracket-matcher");
+    const pack = await lumine.packages.activatePackage("bracket-matcher");
+    waitForMatching = require("./helpers/async-matching")(pack);
 
     await lumine.packages.activatePackage("language-regex");
 
@@ -38,14 +52,16 @@ describe("bracket matching", () => {
       lumine.config.set("bracket-matcher.highlightMatchingLineNumber", true);
     });
 
-    function expectNoHighlights() {
+    async function expectNoHighlights() {
+      await waitForMatching(editor);
       const decorations = editor
         .getHighlightDecorations()
         .filter((decoration) => decoration.properties.class === "bracket-matcher");
       expect(decorations.length).toBe(0);
     }
 
-    function expectHighlights(startBufferPosition, endBufferPosition) {
+    async function expectHighlights(startBufferPosition, endBufferPosition) {
+      await waitForMatching(editor);
       const decorations = editor
         .getHighlightDecorations()
         .filter((decoration) => decoration.properties.class === "bracket-matcher");
@@ -101,6 +117,7 @@ describe("bracket matching", () => {
       editor.setText("[m]");
       editor.setCursorBufferPosition([0, 0]);
       editorElement.classList.add("is-focused");
+      await waitForMatching(editor);
       await editorElement.getComponent().getNextUpdatePromise();
 
       const bracketText = editorElement.querySelectorAll(".line .bracket-matcher");
@@ -119,11 +136,12 @@ describe("bracket matching", () => {
       }
     });
 
-    it("draws normal editor underlines at the bottom of the line height", () => {
+    it("draws normal editor underlines at the bottom of the line height", async () => {
       editor.update({ mini: false });
       editor.setText("[m]");
       editor.setCursorBufferPosition([0, 0]);
       editorElement.classList.add("is-focused");
+      await waitForMatching(editor);
       editorElement.getComponent().updateSync();
       editorElement.removeAttribute("mini");
 
@@ -143,71 +161,71 @@ describe("bracket matching", () => {
       await editor.whenGrammarSettled();
 
       editor.setCursorBufferPosition([0, 6]);
-      expectHighlights([0, 6], [0, 25]);
+      await expectHighlights([0, 6], [0, 25]);
 
       editor.setCursorBufferPosition([0, 13]);
-      expectHighlights([0, 13], [0, 19]);
+      await expectHighlights([0, 13], [0, 19]);
 
       editor.setCursorBufferPosition([0, 26]);
-      expectHighlights([0, 25], [0, 6]);
+      await expectHighlights([0, 25], [0, 6]);
 
       editor.setCursorBufferPosition([0, 13]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+      await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
       expect(editor.getCursorBufferPosition()).toEqual(Point(0, 20));
     });
 
     describe("when the cursor is before a starting pair", () => {
-      it("highlights the starting pair and ending pair", () => {
+      it("highlights the starting pair and ending pair", async () => {
         editor.moveToEndOfLine();
         editor.moveLeft();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
       });
     });
 
     describe("when the cursor is after a starting pair", () => {
-      it("highlights the starting pair and ending pair", () => {
+      it("highlights the starting pair and ending pair", async () => {
         editor.moveToEndOfLine();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
       });
     });
 
     describe("when the cursor is before an ending pair", () => {
-      it("highlights the starting pair and ending pair", () => {
+      it("highlights the starting pair and ending pair", async () => {
         editor.moveToBottom();
         editor.moveLeft();
         editor.moveLeft();
-        expectHighlights([12, 0], [0, 28]);
+        await expectHighlights([12, 0], [0, 28]);
       });
     });
 
     describe("when closing multiple pairs", () => {
-      it("always highlights the inner pair", () => {
+      it("always highlights the inner pair", async () => {
         editor.setCursorBufferPosition([8, 53]);
-        expectHighlights([8, 53], [8, 47]);
+        await expectHighlights([8, 53], [8, 47]);
         editor.moveRight();
-        expectHighlights([8, 53], [8, 47]);
+        await expectHighlights([8, 53], [8, 47]);
         editor.moveRight();
-        expectHighlights([8, 54], [8, 42]);
+        await expectHighlights([8, 54], [8, 42]);
       });
     });
 
     describe("when opening multiple pairs", () => {
-      it("always highlights the inner pair", () => {
+      it("always highlights the inner pair", async () => {
         editor.setText("((1 + 1) * 2)");
         editor.setCursorBufferPosition([0, 0]);
-        expectHighlights([0, 0], [0, 12]);
+        await expectHighlights([0, 0], [0, 12]);
         editor.moveRight();
-        expectHighlights([0, 1], [0, 7]);
+        await expectHighlights([0, 1], [0, 7]);
         editor.moveRight();
-        expectHighlights([0, 1], [0, 7]);
+        await expectHighlights([0, 1], [0, 7]);
       });
     });
 
     describe("when the cursor is after an ending pair", () => {
-      it("highlights the starting pair and ending pair", () => {
+      it("highlights the starting pair and ending pair", async () => {
         editor.moveToBottom();
         editor.moveLeft();
-        expectHighlights([12, 0], [0, 28]);
+        await expectHighlights([12, 0], [0, 28]);
       });
     });
 
@@ -216,27 +234,27 @@ describe("bracket matching", () => {
         editor.setText("(()");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setCursorBufferPosition([0, 1]);
-        expectHighlights([0, 1], [0, 2]);
+        await expectHighlights([0, 1], [0, 2]);
 
         editor.setCursorBufferPosition([0, 2]);
-        expectHighlights([0, 1], [0, 2]);
+        await expectHighlights([0, 1], [0, 2]);
 
         editor.setText("())");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 1]);
+        await expectHighlights([0, 0], [0, 1]);
 
         editor.setCursorBufferPosition([0, 1]);
-        expectHighlights([0, 0], [0, 1]);
+        await expectHighlights([0, 0], [0, 1]);
 
         editor.setCursorBufferPosition([0, 2]);
-        expectHighlights([0, 1], [0, 0]);
+        await expectHighlights([0, 1], [0, 0]);
 
         editor.setCursorBufferPosition([0, 3]);
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
@@ -245,35 +263,35 @@ describe("bracket matching", () => {
         editor.setText("(//)");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setCursorBufferPosition([0, 2]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setCursorBufferPosition([0, 3]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setText("{/*}*/");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setCursorBufferPosition([0, 2]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setCursorBufferPosition([0, 3]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setText("[/*]*/]");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 6]);
+        await expectHighlights([0, 0], [0, 6]);
 
         editor.setCursorBufferPosition([0, 6]);
-        expectHighlights([0, 6], [0, 0]);
+        await expectHighlights([0, 6], [0, 0]);
 
         editor.setCursorBufferPosition([0, 2]);
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
@@ -282,24 +300,24 @@ describe("bracket matching", () => {
         editor.setText("(')')");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 4]);
+        await expectHighlights([0, 0], [0, 4]);
 
         editor.setCursorBufferPosition([0, 5]);
-        expectHighlights([0, 4], [0, 0]);
+        await expectHighlights([0, 4], [0, 0]);
 
         editor.setCursorBufferPosition([0, 2]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.setText('["]"]');
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 4]);
+        await expectHighlights([0, 0], [0, 4]);
 
         editor.setCursorBufferPosition([0, 5]);
-        expectHighlights([0, 4], [0, 0]);
+        await expectHighlights([0, 4], [0, 0]);
 
         editor.setCursorBufferPosition([0, 2]);
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
@@ -308,13 +326,13 @@ describe("bracket matching", () => {
         editor.setText("(`${(1+1)}`)");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 11]);
+        await expectHighlights([0, 0], [0, 11]);
 
         editor.setCursorBufferPosition([0, 12]);
-        expectHighlights([0, 11], [0, 0]);
+        await expectHighlights([0, 11], [0, 0]);
 
         editor.setCursorBufferPosition([0, 4]);
-        expectHighlights([0, 4], [0, 8]);
+        await expectHighlights([0, 4], [0, 8]);
       });
     });
 
@@ -323,13 +341,13 @@ describe("bracket matching", () => {
         editor.setText("(`${('(1+1)')}`)");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectHighlights([0, 0], [0, 15]);
+        await expectHighlights([0, 0], [0, 15]);
 
         editor.setCursorBufferPosition([0, 16]);
-        expectHighlights([0, 15], [0, 0]);
+        await expectHighlights([0, 15], [0, 0]);
 
         editor.setCursorBufferPosition([0, 6]);
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
@@ -344,13 +362,13 @@ describe("bracket matching", () => {
             .getScopesArray()
             .some((scope) => scope.includes("regexp")),
         );
-        expectHighlights([0, 0], [0, 6]);
+        await expectHighlights([0, 0], [0, 6]);
 
         editor.setCursorBufferPosition([0, 7]);
-        expectHighlights([0, 6], [0, 0]);
+        await expectHighlights([0, 6], [0, 0]);
 
         editor.setCursorBufferPosition([0, 3]);
-        expectHighlights([0, 2], [0, 4]);
+        await expectHighlights([0, 2], [0, 4]);
       });
     });
 
@@ -359,17 +377,17 @@ describe("bracket matching", () => {
         editor.setText("'hello'");
         editor.setCursorBufferPosition([0, 0]);
         await editorReady(languageMode);
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
     describe("when the cursor is moved off a pair", () => {
-      it("removes the starting pair and ending pair highlights", () => {
+      it("removes the starting pair and ending pair highlights", async () => {
         editor.moveToEndOfLine();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
 
         editor.moveToBeginningOfLine();
-        expectNoHighlights();
+        await expectNoHighlights();
       });
     });
 
@@ -377,35 +395,35 @@ describe("bracket matching", () => {
       it("repositions the highlights", async () => {
         editor.moveToEndOfLine();
         editor.moveLeft();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
 
         editor.deleteToBeginningOfLine();
         await editorReady(languageMode);
-        expectHighlights([0, 0], [12, 0]);
+        await expectHighlights([0, 0], [12, 0]);
       });
     });
 
     describe("pair balancing", () =>
       describe("when a second starting pair preceeds the first ending pair", () => {
-        it("advances to the second ending pair", () => {
+        it("advances to the second ending pair", async () => {
           editor.setCursorBufferPosition([8, 42]);
-          expectHighlights([8, 42], [8, 54]);
+          await expectHighlights([8, 42], [8, 54]);
         });
       }));
 
     describe("when a cursor is added or destroyed", () => {
-      it("updates the highlights to use the new cursor", () => {
+      it("updates the highlights to use the new cursor", async () => {
         editor.setCursorBufferPosition([9, 0]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.addCursorAtBufferPosition([0, 29]);
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
 
         editor.addCursorAtBufferPosition([0, 4]);
-        expectNoHighlights();
+        await expectNoHighlights();
 
         editor.getLastCursor().destroy();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
       });
     });
 
@@ -422,11 +440,11 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor moves off (clears) a selection next to a starting or ending pair", () => {
-      it("highlights the starting pair and ending pair", () => {
+      it("highlights the starting pair and ending pair", async () => {
         editor.moveToEndOfLine();
         editor.selectLeft();
         editor.getLastCursor().clearSelection();
-        expectHighlights([0, 28], [12, 0]);
+        await expectHighlights([0, 28], [12, 0]);
       });
     });
 
@@ -456,10 +474,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([0, 0]);
             await editorReady(languageMode);
-            expectHighlights([0, 1], [3, 2]);
+            await expectHighlights([0, 1], [3, 2]);
 
             editor.setCursorBufferPosition([0, 1]);
-            expectHighlights([0, 1], [3, 2]);
+            await expectHighlights([0, 1], [3, 2]);
           });
         });
 
@@ -474,10 +492,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([3, 0]);
             await editorReady(languageMode);
-            expectHighlights([3, 2], [0, 1]);
+            await expectHighlights([3, 2], [0, 1]);
 
             editor.setCursorBufferPosition([3, 2]);
-            expectHighlights([3, 2], [0, 1]);
+            await expectHighlights([3, 2], [0, 1]);
 
             buffer.setText(`\
 <test>
@@ -488,10 +506,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([1, Infinity]);
             await editorReady(languageMode);
-            expectHighlights([1, 14], [1, 3]);
+            await expectHighlights([1, 14], [1, 3]);
 
             editor.setCursorBufferPosition([2, Infinity]);
-            expectHighlights([2, 14], [2, 3]);
+            await expectHighlights([2, 14], [2, 3]);
           });
 
           it("highlights the correct opening tag, skipping self-closing tags", async () => {
@@ -503,7 +521,7 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([2, Infinity]);
             await editorReady(languageMode);
-            expectHighlights([2, 2], [0, 1]);
+            await expectHighlights([2, 2], [0, 1]);
           });
         });
 
@@ -517,7 +535,7 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([1, Infinity]);
             await editorReady(languageMode);
-            expectHighlights([1, 3], [1, 3]);
+            await expectHighlights([1, 3], [1, 3]);
           });
 
           it("highlights a self-closing tag without a space", async () => {
@@ -529,7 +547,7 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([1, Infinity]);
             await editorReady(languageMode);
-            expectHighlights([1, 3], [1, 3]);
+            await expectHighlights([1, 3], [1, 3]);
           });
 
           it("highlights a self-closing tag with many spaces", async () => {
@@ -541,7 +559,7 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([1, Infinity]);
             await editorReady(languageMode);
-            expectHighlights([1, 3], [1, 3]);
+            await expectHighlights([1, 3], [1, 3]);
           });
 
           it("does not catastrophically backtrack when many attributes are present (regression)", async () => {
@@ -557,19 +575,19 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([0, 6]);
             await editorReady(languageMode);
-            expectHighlights([0, 1], [4, 2]);
+            await expectHighlights([0, 1], [4, 2]);
 
             editor.setCursorBufferPosition([1, 6]);
-            expectHighlights([1, 3], [3, 4]);
+            await expectHighlights([1, 3], [3, 4]);
 
             editor.setCursorBufferPosition([2, 6]);
-            expectHighlights([2, 5], [2, 5]);
+            await expectHighlights([2, 5], [2, 5]);
 
             editor.setCursorBufferPosition([3, 6]);
-            expectHighlights([3, 4], [1, 3]);
+            await expectHighlights([3, 4], [1, 3]);
 
             editor.setCursorBufferPosition([4, 6]);
-            expectHighlights([4, 2], [0, 1]);
+            await expectHighlights([4, 2], [0, 1]);
           });
         });
 
@@ -588,9 +606,9 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([0, 1]);
             await editorReady(languageMode);
-            expectHighlights([0, 1], [6, 2]);
+            await expectHighlights([0, 1], [6, 2]);
             editor.setCursorBufferPosition([6, 2]);
-            expectHighlights([6, 2], [0, 1]);
+            await expectHighlights([6, 2], [0, 1]);
           });
         });
 
@@ -604,10 +622,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([2, 2]);
             await editorReady(languageMode);
-            expectHighlights([2, 2], [0, 1]);
+            await expectHighlights([2, 2], [0, 1]);
 
             editor.setCursorBufferPosition([0, 7]);
-            expectHighlights([0, 1], [2, 2]);
+            await expectHighlights([0, 1], [2, 2]);
           });
         });
 
@@ -621,10 +639,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([2, 2]);
             await editorReady(languageMode);
-            expectHighlights([2, 2], [0, 1]);
+            await expectHighlights([2, 2], [0, 1]);
 
             editor.setCursorBufferPosition([0, 7]);
-            expectHighlights([0, 1], [2, 2]);
+            await expectHighlights([0, 1], [2, 2]);
           });
         });
 
@@ -634,10 +652,10 @@ describe("bracket matching", () => {
 
             editor.setCursorBufferPosition([0, 2]);
             await editorReady(languageMode);
-            expectHighlights([0, 1], [0, 12]);
+            await expectHighlights([0, 1], [0, 12]);
 
             editor.setCursorBufferPosition([0, 12]);
-            expectHighlights([0, 12], [0, 1]);
+            await expectHighlights([0, 12], [0, 1]);
           });
         });
 
@@ -646,7 +664,7 @@ describe("bracket matching", () => {
             buffer.setText("<test>\ntext\n");
             editor.setCursorBufferPosition([0, 10]);
             await editorReady(languageMode);
-            expectNoHighlights();
+            await expectNoHighlights();
           });
         });
 
@@ -655,7 +673,7 @@ describe("bracket matching", () => {
             buffer.setText("<div>\nhi\n</div>\n");
             editor.setCursorBufferPosition([1, 0]);
             await editorReady(languageMode);
-            expectNoHighlights();
+            await expectNoHighlights();
           });
         });
       });
@@ -663,7 +681,7 @@ describe("bracket matching", () => {
   });
 
   describe("when bracket-matcher:go-to-matching-bracket is triggered", () => {
-    it("does not forward a mini-editor target to the active file editor", () => {
+    it("does not forward a mini-editor target to the active file editor", async () => {
       const miniEditor = lumine.workspace.buildTextEditor({ mini: true });
       const miniElement = lumine.views.getView(miniEditor);
       lumine.workspace.getElement().appendChild(miniElement);
@@ -677,7 +695,7 @@ describe("bracket matching", () => {
         expect(
           lumine.commands.canDispatch(miniElement, "bracket-matcher:go-to-matching-bracket"),
         ).toBe(false);
-        lumine.commands.dispatch(miniElement, "bracket-matcher:go-to-matching-bracket");
+        await dispatchAndWait(miniElement, "bracket-matcher:go-to-matching-bracket");
 
         expect(editor.getCursorBufferPosition()).toEqual(position);
         expect(miniEditor.getCursorBufferPosition()).toEqual([0, 0]);
@@ -687,51 +705,51 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is before the starting pair", () => {
-      it("moves the cursor to after the ending pair", () => {
+      it("moves the cursor to after the ending pair", async () => {
         editor.moveToEndOfLine();
         editor.moveLeft();
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([12, 1]);
       });
     });
 
     describe("when the cursor is after the starting pair", () => {
-      it("moves the cursor to before the ending pair", () => {
+      it("moves the cursor to before the ending pair", async () => {
         editor.moveToEndOfLine();
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([12, 0]);
       });
     });
 
     describe("when the cursor is before the ending pair", () => {
-      it("moves the cursor to after the starting pair", () => {
+      it("moves the cursor to after the starting pair", async () => {
         editor.setCursorBufferPosition([12, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 29]);
       });
     });
 
     describe("when the cursor is after the ending pair", () => {
-      it("moves the cursor to before the starting pair", () => {
+      it("moves the cursor to before the starting pair", async () => {
         editor.setCursorBufferPosition([12, 1]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
       });
     });
 
     describe("when the cursor is not adjacent to a pair", () => {
       describe("when within a `{}` pair", () => {
-        it("moves the cursor to before the enclosing brace", () => {
+        it("moves the cursor to before the enclosing brace", async () => {
           editor.setCursorBufferPosition([11, 2]);
-          lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+          await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
           expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
         });
       });
 
       describe("when within a `()` pair", () => {
-        it("moves the cursor to before the enclosing brace", () => {
+        it("moves the cursor to before the enclosing brace", async () => {
           editor.setCursorBufferPosition([2, 14]);
-          lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+          await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
           expect(editor.getCursorBufferPosition()).toEqual([2, 7]);
         });
       });
@@ -756,89 +774,89 @@ describe("bracket matching", () => {
           });
 
           describe("when within a <tag></tag> pair", () => {
-            it("moves the cursor to the starting tag", () => {
+            it("moves the cursor to the starting tag", async () => {
               editor.setCursorBufferPosition([5, 10]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([4, 9]);
             });
           });
 
           describe("when on a starting <tag>", () => {
-            it("moves the cursor to the end </tag>", () => {
+            it("moves the cursor to the end </tag>", async () => {
               editor.setCursorBufferPosition([1, 2]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 2]);
 
               editor.setCursorBufferPosition([1, 3]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 4]);
 
               editor.setCursorBufferPosition([1, 4]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 5]);
 
               editor.setCursorBufferPosition([1, 5]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 6]);
 
               editor.setCursorBufferPosition([1, 6]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 7]);
 
               editor.setCursorBufferPosition([1, 7]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 8]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 9]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 10]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
 
               editor.setCursorBufferPosition([1, 16]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([15, 8]);
             });
           });
 
           describe("when on an ending </tag>", () => {
-            it("moves the cursor to the start <tag>", () => {
+            it("moves the cursor to the start <tag>", async () => {
               editor.setCursorBufferPosition([15, 2]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 2]);
 
               editor.setCursorBufferPosition([15, 3]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 3]);
 
               editor.setCursorBufferPosition([15, 4]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 3]);
 
               editor.setCursorBufferPosition([15, 5]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 4]);
 
               editor.setCursorBufferPosition([15, 6]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 5]);
 
               editor.setCursorBufferPosition([15, 7]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 6]);
 
               editor.setCursorBufferPosition([15, 8]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 7]);
 
               editor.setCursorBufferPosition([15, 9]);
-              lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-matching-bracket");
+              await dispatchAndWait(editorElement, "bracket-matcher:go-to-matching-bracket");
               expect(editor.getCursorBufferPosition()).toEqual([1, 7]);
             });
           });
@@ -849,25 +867,25 @@ describe("bracket matching", () => {
 
   describe("when bracket-matcher:go-to-enclosing-bracket is triggered", () => {
     describe("when within a `{}` pair", () => {
-      it("moves the cursor to before the enclosing brace", () => {
+      it("moves the cursor to before the enclosing brace", async () => {
         editor.setCursorBufferPosition([11, 2]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
       });
     });
 
     describe("when within a `()` pair", () => {
-      it("moves the cursor to before the enclosing brace", () => {
+      it("moves the cursor to before the enclosing brace", async () => {
         editor.setCursorBufferPosition([2, 14]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([2, 7]);
       });
     });
 
     describe("when not within a pair", () => {
-      it("does not do anything", () => {
+      it("does not do anything", async () => {
         editor.setCursorBufferPosition([0, 3]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:go-to-enclosing-bracket");
+        await dispatchAndWait(editorElement, "bracket-matcher:go-to-enclosing-bracket");
         expect(editor.getCursorBufferPosition()).toEqual([0, 3]);
       });
     });
@@ -875,9 +893,9 @@ describe("bracket matching", () => {
 
   describe("when bracket-match:select-inside-brackets is triggered", () => {
     describe("when the cursor on the left side of a bracket", () => {
-      it("selects the text inside the brackets", () => {
+      it("selects the text inside the brackets", async () => {
         editor.setCursorBufferPosition([0, 28]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [0, 29],
           [12, 0],
@@ -886,9 +904,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor on the right side of a bracket", () => {
-      it("selects the text inside the brackets", () => {
+      it("selects the text inside the brackets", async () => {
         editor.setCursorBufferPosition([1, 30]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [1, 30],
           [9, 2],
@@ -897,9 +915,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is inside the brackets", () => {
-      it("selects the text for the closest outer brackets", () => {
+      it("selects the text for the closest outer brackets", async () => {
         editor.setCursorBufferPosition([6, 6]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [4, 29],
           [7, 4],
@@ -908,12 +926,12 @@ describe("bracket matching", () => {
     });
 
     describe("when there are no brackets or tags", () => {
-      it("does not catastrophically backtrack (regression)", () => {
+      it("does not catastrophically backtrack (regression)", async () => {
         buffer.setText(`${"a".repeat(500)}\n`.repeat(500));
         editor.setCursorBufferPosition([0, 500]);
 
         const start = Date.now();
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
         expect(editor.getSelectedBufferRange()).toEqual([
           [0, 500],
           [0, 500],
@@ -922,11 +940,11 @@ describe("bracket matching", () => {
       });
     });
 
-    it("does not error when a bracket is already highlighted (regression)", () => {
+    it("does not error when a bracket is already highlighted (regression)", async () => {
       lumine.grammars.assignLanguageMode(editor, null);
       editor.setText("(ok)");
       editor.selectAll();
-      lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+      await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
     });
 
     describe("when there are multiple cursors", () => {
@@ -938,14 +956,14 @@ describe("bracket matching", () => {
         await editor.languageMode.ready;
         await editor.languageMode.atTransactionEnd();
       });
-      it("selects text inside the multiple cursors", () => {
+      it("selects text inside the multiple cursors", async () => {
         editor.addCursorAtBufferPosition([0, 6]);
         editor.addCursorAtBufferPosition([1, 6]);
         editor.addCursorAtBufferPosition([2, 6]);
         editor.addCursorAtBufferPosition([3, 6]);
         editor.addCursorAtBufferPosition([4, 6]);
 
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
 
         const selectedRanges = editor.getSelectedBufferRanges();
         expect(selectedRanges.length).toBe(6);
@@ -997,9 +1015,9 @@ describe("bracket matching", () => {
         });
 
         describe("when the cursor is on a starting tag", () => {
-          it("selects the text inside the starting/closing tag", () => {
+          it("selects the text inside the starting/closing tag", async () => {
             editor.setCursorBufferPosition([4, 9]);
-            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [4, 13],
               [6, 8],
@@ -1008,9 +1026,9 @@ describe("bracket matching", () => {
         });
 
         describe("when the cursor is on an ending tag", () => {
-          it("selects the text inside the starting/closing tag", () => {
+          it("selects the text inside the starting/closing tag", async () => {
             editor.setCursorBufferPosition([14, 9]);
-            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [10, 9],
               [14, 4],
@@ -1019,9 +1037,9 @@ describe("bracket matching", () => {
         });
 
         describe("when the cursor is inside a tag", () => {
-          it("selects the text inside the starting/closing tag", () => {
+          it("selects the text inside the starting/closing tag", async () => {
             editor.setCursorBufferPosition([12, 8]);
-            lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+            await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
             expect(editor.getSelectedBufferRange()).toEqual([
               [11, 11],
               [13, 6],
@@ -1029,9 +1047,9 @@ describe("bracket matching", () => {
           });
         });
 
-        it("does not select attributes inside tags", () => {
+        it("does not select attributes inside tags", async () => {
           editor.setCursorBufferPosition([1, 10]);
-          lumine.commands.dispatch(editorElement, "bracket-matcher:select-inside-brackets");
+          await dispatchAndWait(editorElement, "bracket-matcher:select-inside-brackets");
           expect(editor.getSelectedBufferRange()).toEqual([
             [1, 17],
             [15, 2],
@@ -1043,18 +1061,18 @@ describe("bracket matching", () => {
 
   describe("when bracket-matcher:remove-matching-brackets is triggered", () => {
     describe("when the cursor is not in front of any pair", () => {
-      it("performs a regular backspace action", () => {
+      it("performs a regular backspace action", async () => {
         editor.setCursorBufferPosition([0, 1]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("ar quicksort = function () {");
         expect(editor.getCursorBufferPosition()).toEqual([0, 0]);
       });
     });
 
     describe("when the cursor is at the beginning of a line", () => {
-      it("performs a regular backspace action", () => {
+      it("performs a regular backspace action", async () => {
         editor.setCursorBufferPosition([12, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sort(Array.apply(this, arguments));};",
         );
@@ -1063,27 +1081,27 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is on the left side of a starting pair", () => {
-      it("performs a regular backspace action", () => {
+      it("performs a regular backspace action", async () => {
         editor.setCursorBufferPosition([0, 28]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("var quicksort = function (){");
         expect(editor.getCursorBufferPosition()).toEqual([0, 27]);
       });
     });
 
     describe("when the cursor is on the left side of an ending pair", () => {
-      it("performs a regular backspace action", () => {
+      it("performs a regular backspace action", async () => {
         editor.setCursorBufferPosition([7, 4]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(7)).toEqual("  }");
         expect(editor.getCursorBufferPosition()).toEqual([7, 2]);
       });
     });
 
     describe("when the cursor is on the right side of a starting pair, the ending pair on another line", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setCursorBufferPosition([0, 29]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(0)).toEqual("var quicksort = function () ");
         expect(editor.lineTextForBufferRow(12)).toEqual(";");
         expect(editor.getCursorBufferPosition()).toEqual([0, 28]);
@@ -1091,9 +1109,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is on the right side of an ending pair, the starting pair on another line", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setCursorBufferPosition([7, 5]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(4)).toEqual("    while(items.length > 0) ");
         expect(editor.lineTextForBufferRow(7)).toEqual("    ");
         expect(editor.getCursorBufferPosition()).toEqual([7, 4]);
@@ -1101,9 +1119,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is on the right side of a starting pair, the ending pair on the same line", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setCursorBufferPosition([11, 14]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1112,9 +1130,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor is on the right side of an ending pair, the starting pair on the same line", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setCursorBufferPosition([11, 43]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1123,12 +1141,12 @@ describe("bracket matching", () => {
     });
 
     describe("when a starting pair is selected", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setSelectedBufferRange([
           [11, 13],
           [11, 14],
         ]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1137,12 +1155,12 @@ describe("bracket matching", () => {
     });
 
     describe("when an ending pair is selected", () => {
-      it("removes both pairs", () => {
+      it("removes both pairs", async () => {
         editor.setSelectedBufferRange([
           [11, 42],
           [11, 43],
         ]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-matching-brackets");
         expect(editor.lineTextForBufferRow(11)).toEqual(
           "  return sortArray.apply(this, arguments);",
         );
@@ -1157,23 +1175,23 @@ describe("bracket matching", () => {
     });
 
     describe("when selection is not a matching pair of brackets", () => {
-      it("does not change the text", () => {
+      it("does not change the text", async () => {
         editor.insertText('"woah(');
         editor.selectAll();
-        lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+        await dispatchAndWait(editorElement, "bracket-matcher:remove-brackets-from-selection");
         expect(editor.buffer.getText()).toBe('"woah(');
       });
     });
 
     describe("when selecting a matching pair of brackets", () => {
       describe("on the same line", () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           editor.buffer.setText('it "does something", :meta => true');
           editor.setSelectedBufferRange([
             [0, 3],
             [0, 19],
           ]);
-          lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+          await dispatchAndWait(editorElement, "bracket-matcher:remove-brackets-from-selection");
         });
 
         it("removes the brackets", () => {
@@ -1186,13 +1204,13 @@ describe("bracket matching", () => {
       });
 
       describe("on separate lines", () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           editor.buffer.setText('it ("does something" do\nend)');
           editor.setSelectedBufferRange([
             [0, 3],
             [1, 4],
           ]);
-          lumine.commands.dispatch(editorElement, "bracket-matcher:remove-brackets-from-selection");
+          await dispatchAndWait(editorElement, "bracket-matcher:remove-brackets-from-selection");
         });
 
         it("removes the brackets", () => {
@@ -1734,6 +1752,7 @@ describe("bracket matching", () => {
         await editorReady(languageMode);
         expect(editor.getText()).toBe("void main() {}");
         editor.insertNewline();
+        await waitForMatching(editor);
         expect(editor.getCursorBufferPosition()).toEqual([1, 2]);
         expect(buffer.lineForRow(1)).toBe("  ");
         expect(buffer.lineForRow(2)).toBe("}");
@@ -1742,10 +1761,11 @@ describe("bracket matching", () => {
         editor.insertText("{");
         await editorReady(languageMode);
         expect(editor.getText()).toBe("void main() {}");
-        editor.indentSelectedRows();
+        await editor.indentSelectedRows();
         expect(editor.getText()).toBe("  void main() {}");
         await editorReady(languageMode);
         editor.insertNewline();
+        await waitForMatching(editor);
         expect(editor.getCursorBufferPosition()).toEqual([1, 4]);
         expect(buffer.lineForRow(1)).toBe("    ");
         expect(buffer.lineForRow(2)).toBe("  }");
@@ -1788,51 +1808,51 @@ describe("bracket matching", () => {
           await languageMode.ready;
         });
 
-        it("should insert curly braces inside double-quoted string", () => {
+        it("should insert curly braces inside double-quoted string", async () => {
           editor.insertText("foo = ");
           editor.insertText('"');
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe('foo = "#{}"');
           editor.undo();
           expect(editor.getText()).toBe('foo = ""');
         });
 
-        it("should not insert curly braces inside single-quoted string", () => {
+        it("should not insert curly braces inside single-quoted string", async () => {
           editor.insertText("foo = ");
           editor.insertText("'");
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe("foo = '#'");
         });
 
-        it("should insert curly braces inside % string", () => {
+        it("should insert curly braces inside % string", async () => {
           editor.insertText("foo = %");
           editor.insertText("(");
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe("foo = %(#{})");
         });
 
-        it("should not insert curly braces inside non-interpolated % string", () => {
+        it("should not insert curly braces inside non-interpolated % string", async () => {
           editor.insertText("foo = %q");
           editor.insertText("(");
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe("foo = %q(#)");
         });
 
-        it("should insert curly braces inside interpolated symbol", () => {
+        it("should insert curly braces inside interpolated symbol", async () => {
           editor.insertText("foo = :");
           editor.insertText('"');
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe('foo = :"#{}"');
         });
 
-        it("wraps the selection in the interpolation brackets when the selection is a single line", () => {
+        it("wraps the selection in the interpolation brackets when the selection is a single line", async () => {
           editor.setText('foo = "a bar"');
           editor.setSelectedBufferRange([
             [0, 9],
             [0, 12],
           ]);
 
-          editor.insertText("#");
+          await insertTextAndWait("#");
           // coffeelint: disable=no_interpolation_in_single_quotes
           expect(editor.getText()).toBe('foo = "a #{bar}"');
           // coffeelint: enable=no_interpolation_in_single_quotes
@@ -1849,14 +1869,14 @@ describe("bracket matching", () => {
           ]);
         });
 
-        it("does not wrap the selection in the interpolation brackets when the selection is mutli-line", () => {
+        it("does not wrap the selection in the interpolation brackets when the selection is mutli-line", async () => {
           editor.setText('foo = "a bar"\nfoo = "a bar"');
           editor.setSelectedBufferRange([
             [0, 9],
             [1, 12],
           ]);
 
-          editor.insertText("#");
+          await insertTextAndWait("#");
           expect(editor.getText()).toBe('foo = "a #{}"');
           expect(editor.getSelectedBufferRange()).toEqual([
             [0, 11],
@@ -1923,9 +1943,9 @@ describe("bracket matching", () => {
       buffer = editor.buffer;
     });
 
-    it("closes the first unclosed tag", () => {
+    it("closes the first unclosed tag", async () => {
       editor.setCursorBufferPosition([5, 14]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([5, 18]);
       expect(
@@ -1936,10 +1956,10 @@ describe("bracket matching", () => {
       ).toEqual("</a>");
     });
 
-    it("closes the following unclosed tags if called repeatedly", () => {
+    it("closes the following unclosed tags if called repeatedly", async () => {
       editor.setCursorBufferPosition([5, 14]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([5, 22]);
       expect(
@@ -1950,36 +1970,36 @@ describe("bracket matching", () => {
       ).toEqual("</p>");
     });
 
-    it("does not close any tag if no unclosed tag can be found at the insertion point", () => {
+    it("does not close any tag if no unclosed tag can be found at the insertion point", async () => {
       editor.setCursorBufferPosition([5, 14]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       // closing all currently open tags
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
       editor.setCursorBufferPosition([13, 11]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
       editor.setCursorBufferPosition([15, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       // positioning on an already closed tag
       editor.setCursorBufferPosition([11, 9]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
       expect(editor.getCursorBufferPosition()).toEqual([11, 9]);
     });
 
-    it("does not get confused in case of nested identical tags -- tag not closing", () => {
+    it("does not get confused in case of nested identical tags -- tag not closing", async () => {
       editor.setCursorBufferPosition([13, 11]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
     });
 
-    it("does not get confused in case of nested identical tags -- tag closing", () => {
+    it("does not get confused in case of nested identical tags -- tag closing", async () => {
       editor.setCursorBufferPosition([13, 11]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
       expect(
@@ -1989,7 +2009,7 @@ describe("bracket matching", () => {
         ]),
       ).toEqual("</div>");
 
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
     });
@@ -2007,7 +2027,7 @@ describe("bracket matching", () => {
 `);
 
       editor.setCursorBufferPosition([2, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition().row).toEqual(2);
       expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -2035,7 +2055,7 @@ describe("bracket matching", () => {
 `);
 
       editor.setCursorBufferPosition([1, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition().row).toEqual(1);
       expect(editor.getCursorBufferPosition().column).toEqual(0);
@@ -2060,7 +2080,7 @@ describe("bracket matching", () => {
 `);
 
       editor.setCursorBufferPosition([2, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition().row).toEqual(2);
       expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -2077,7 +2097,7 @@ describe("bracket matching", () => {
 `);
 
       editor.setCursorBufferPosition([1, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition().row).toEqual(1);
       expect(editor.getCursorBufferPosition().column).toEqual(6);
@@ -2105,7 +2125,7 @@ describe("bracket matching", () => {
 `);
 
       editor.setCursorBufferPosition([1, 0]);
-      lumine.commands.dispatch(editorElement, "bracket-matcher:close-tag");
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
       expect(editor.getCursorBufferPosition().row).toEqual(1);
       expect(editor.getCursorBufferPosition().column).toEqual(0);
@@ -2120,9 +2140,9 @@ describe("bracket matching", () => {
 
   describe("when bracket-matcher:select-matching-brackets is triggered", () => {
     describe("when the cursor on the left side of an opening bracket", () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         editor.setCursorBufferPosition([0, 28]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2156,9 +2176,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor on the right side of an opening bracket", () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         editor.setCursorBufferPosition([1, 30]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2192,9 +2212,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor on the left side of an closing bracket", () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         editor.setCursorBufferPosition([12, 0]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("selects the brackets", () => {
@@ -2228,9 +2248,9 @@ describe("bracket matching", () => {
     });
 
     describe("when the cursor isn't near to a bracket", () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         editor.setCursorBufferPosition([1, 5]);
-        lumine.commands.dispatch(editorElement, "bracket-matcher:select-matching-brackets");
+        await dispatchAndWait(editorElement, "bracket-matcher:select-matching-brackets");
       });
 
       it("doesn't selects the brackets", () => {

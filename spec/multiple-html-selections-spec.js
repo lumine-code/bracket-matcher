@@ -21,11 +21,12 @@ describe("Bracket selection inside multiple HTML elements", () => {
     editor.setText(source);
     expect(await editor.whenGrammarSettled()).toBeTrue();
     if (editor.getGrammar().scopeName === "text.html.basic") {
-      const root = editor.getSyntaxNodeAtBufferPosition([0, 0], (node) => !node.parent);
-      expect(root.hasError).toBeFalse();
+      expect(
+        await editor.analyzeSyntax(require.resolve("./helpers/syntax-state"), "isValid"),
+      ).toBeTrue();
     }
     editor.setSelectedBufferRanges(positions.map((position) => [position, position]));
-    lumine.commands.dispatch(editor.getElement(), "bracket-matcher:select-inside-brackets");
+    await lumine.commands.dispatch(editor.getElement(), "bracket-matcher:select-inside-brackets");
     return editor.getSelectedBufferRanges();
   }
 
