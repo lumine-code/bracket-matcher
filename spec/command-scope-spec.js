@@ -1,4 +1,9 @@
 describe("bracket-matcher command scopes", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   const commands = [
     "go-to-matching-bracket",
     "go-to-enclosing-bracket",

@@ -1,4 +1,9 @@
 describe("text editor lifecycle", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   it("unwatches removed editors, watches them once when re-added, and cleans up on deactivate", async () => {
     await lumine.packages.activatePackage("bracket-matcher");
 
@@ -11,6 +16,7 @@ describe("text editor lifecycle", () => {
       backspace: editor.backspace,
     };
     const mainModule = lumine.packages.getActivePackage("bracket-matcher").mainModule;
+    const subscriptionCount = mainModule.editorRegistrySubscriptions.disposables.size;
     const didChange = jasmine.createSpy("didChange");
     const matchSubscription = mainModule.provideBracketMatcher().observe(didChange);
     let registration;
@@ -25,6 +31,7 @@ describe("text editor lifecycle", () => {
 
       registration.dispose();
       registration = null;
+      expect(mainModule.editorRegistrySubscriptions.disposables.size).toBe(subscriptionCount);
       expect(editor.insertText).toBe(originalMethods.insertText);
       expect(editor.insertNewline).toBe(originalMethods.insertNewline);
       expect(editor.backspace).toBe(originalMethods.backspace);

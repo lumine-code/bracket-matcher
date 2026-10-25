@@ -1,6 +1,11 @@
 const { Emitter, Point } = require("lumine");
 
 describe("Asynchronous bracket highlight lifetime", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let editor, view, mode, events, queries, manager, epoch;
   const pair = (end = 4) => ({
     pair: { position: new Point(0, 0), matchPosition: new Point(0, end) },
@@ -90,7 +95,10 @@ describe("Asynchronous bracket highlight lifetime", () => {
       if (change === "epoch") epoch++;
       if (change === "pairs") manager.pairedCharacters = { "[": "]" };
       if (change === "grammar") {
-        const replacement = new mode.constructor({ buffer: editor.getBuffer() });
+        const replacement = lumine.grammars.languageModeForGrammarAndBuffer(
+          editor.getGrammar(),
+          editor.getBuffer(),
+        );
         replacement.asynchronousSyntax = true;
         editor.getBuffer().setLanguageMode(replacement);
       }

@@ -2,6 +2,11 @@ const path = require("path");
 const { CompositeDisposable } = require("lumine");
 
 describe("advice dispatch during text editor lifecycle changes", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let editor, adviseBefore, disposables;
   beforeEach(async () => {
     await lumine.packages.activatePackage(path.join(__dirname, ".."));

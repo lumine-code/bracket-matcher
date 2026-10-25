@@ -1,6 +1,11 @@
 const { CompositeDisposable } = require("lumine");
 
 describe("bracket-matcher marker layer", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let editor, mainModule, provider, layer, layers, api, consumerDisposable;
   let waitForMatching;
   async function moveCursor(position) {

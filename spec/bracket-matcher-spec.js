@@ -1936,6 +1936,7 @@ describe("bracket matching", () => {
 
   describe("bracket-matcher:close-tag", () => {
     beforeEach(async () => {
+      await lumine.packages.activatePackage("language-html");
       await lumine.workspace.open(path.join(__dirname, "fixtures", "sample.html"));
 
       editor = lumine.workspace.getActiveTextEditor();

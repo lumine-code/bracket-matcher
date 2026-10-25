@@ -1,4 +1,9 @@
 describe("Bracket Matcher cleared selection matches", () => {
+  // Processing fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let editor, main;
   beforeEach(async () => {
     for (const method of ["openExternal", "openPath", "showItemInFolder", "openApplication"])
