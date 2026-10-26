@@ -7,7 +7,9 @@ describe("source-backed bracket operations", () => {
     helpers = require("../lib/text-source");
     editor = new TextEditor();
     editor.setSoftWrapped(false);
-    matcher = new BracketMatcher(editor, editor.getElement(), {
+    // Exercise model edits without mounting the separate Linux PRIMARY
+    // clipboard observer, which legitimately reads bounded selections.
+    matcher = new BracketMatcher(editor, null, {
       pairedCharacters: { "(": ")", "[": "]" },
       pairedCharactersInverse: { ")": "(", "]": "[" },
     });
