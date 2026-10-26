@@ -35,6 +35,12 @@ Commands available in `lumine-text-editor:not([mini]):not([readonly])`:
 - `bracket-matcher:remove-brackets-from-selection`: remove the brackets surrounding the selection,
 - `bracket-matcher:close-tag`: close the current XML/HTML tag.
 
+## Usage
+
+Closing tags scans immutable source chunks and can be cancelled by editing, moving the selection, changing grammar or closing the editor. It does not copy the whole document. HTML tag comparisons ignore case and recognize void elements; XML comparisons retain case. Comments, CDATA and HTML script/style bodies are tokenized rather than interpreted as tag text.
+
+The command declines ambiguous contexts, including a cursor inside unfinished markup, mismatched closing tags or omitted end tags whose scope would require HTML tree construction. This is deliberately more conservative than the former regular-expression fallback. Individual tag names are limited to4096 UTF-16 units, closing-tag tokens to65536 units, and the open-tag stack to16384 names or1 Mi total name units; exceeding a limit reports an error without inserting anything. Attributes and document text are streamed without a whole-document size cap.
+
 ## Configuration
 
 Matching pairs can be customized per language through scoped settings in your `config.json`, overriding the package defaults. Changes take effect immediately. For example:

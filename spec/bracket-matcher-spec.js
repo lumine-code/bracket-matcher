@@ -1945,74 +1945,70 @@ describe("bracket matching", () => {
     });
 
     it("closes the first unclosed tag", async () => {
-      editor.setCursorBufferPosition([5, 14]);
+      editor.setText("<p><a>");
+      editor.setCursorBufferPosition([0, 6]);
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
-      expect(editor.getCursorBufferPosition()).toEqual([5, 18]);
+      expect(editor.getCursorBufferPosition()).toEqual([0, 10]);
       expect(
         editor.getTextInRange([
-          [5, 14],
-          [5, 18],
+          [0, 6],
+          [0, 10],
         ]),
       ).toEqual("</a>");
     });
 
     it("closes the following unclosed tags if called repeatedly", async () => {
-      editor.setCursorBufferPosition([5, 14]);
+      editor.setText("<p><a>");
+      editor.setCursorBufferPosition([0, 6]);
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
-      expect(editor.getCursorBufferPosition()).toEqual([5, 22]);
+      expect(editor.getCursorBufferPosition()).toEqual([0, 14]);
       expect(
         editor.getTextInRange([
-          [5, 18],
-          [5, 22],
+          [0, 10],
+          [0, 14],
         ]),
       ).toEqual("</p>");
     });
 
     it("does not close any tag if no unclosed tag can be found at the insertion point", async () => {
-      editor.setCursorBufferPosition([5, 14]);
+      editor.setText("<root><div></div></root>");
+      editor.setCursorBufferPosition([0, 11]);
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-
-      // closing all currently open tags
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-      editor.setCursorBufferPosition([13, 11]);
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-      editor.setCursorBufferPosition([15, 0]);
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-
-      // positioning on an already closed tag
-      editor.setCursorBufferPosition([11, 9]);
-      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
-      expect(editor.getCursorBufferPosition()).toEqual([11, 9]);
+      expect(editor.getCursorBufferPosition()).toEqual([0, 11]);
+      expect(editor.getText()).toBe("<root><div></div></root>");
     });
 
     it("does not get confused in case of nested identical tags -- tag not closing", async () => {
-      editor.setCursorBufferPosition([13, 11]);
+      editor.setText("<div><div></div>");
+      editor.setCursorBufferPosition([0, 5]);
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
-      expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
+      expect(editor.getCursorBufferPosition()).toEqual([0, 11]);
+      expect(editor.getText()).toBe("<div></div><div></div>");
     });
 
     it("does not get confused in case of nested identical tags -- tag closing", async () => {
-      editor.setCursorBufferPosition([13, 11]);
+      editor.setText("<div><div></div></div>");
+      editor.setCursorBufferPosition([0, 5]);
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
-      expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
-      expect(
-        editor.getTextInRange([
-          [13, 10],
-          [13, 16],
-        ]),
-      ).toEqual("</div>");
+      expect(editor.getCursorBufferPosition()).toEqual([0, 5]);
+      expect(editor.getText()).toBe("<div><div></div></div>");
 
       await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
 
-      expect(editor.getCursorBufferPosition()).toEqual([13, 16]);
+      expect(editor.getCursorBufferPosition()).toEqual([0, 5]);
+    });
+
+    it("does not rewrite a malformed ancestor closure by guessing an omitted tag", async () => {
+      editor.setText("<div><p><a></div>");
+      editor.setCursorBufferPosition([0, 11]);
+      await dispatchAndWait(editorElement, "bracket-matcher:close-tag");
+      expect(editor.getText()).toBe("<div><p><a></div>");
     });
 
     it("does not get confused in case of nested self closing tags", async () => {
