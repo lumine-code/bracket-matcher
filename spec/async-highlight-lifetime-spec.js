@@ -135,6 +135,97 @@ describe("Asynchronous bracket highlight lifetime", () => {
     expect(console.error).toHaveBeenCalledWith("Unable to update bracket match", failure);
   });
 
+  it("stops requests after a known parser failure and resumes when the mode recovers", async () => {
+    const report = spyOn(console, "error");
+    const pending = view.updateMatch();
+    const failure = new Error("Permanent WASM parse failure");
+    mode.error = failure;
+    queries.at(-1).reject(failure);
+    await expectAsync(pending).toBeRejectedWith(failure);
+    const count = queries.length;
+    for (let index = 0; index < 5; index++) {
+      editor.setCursorBufferPosition([0, index]);
+      events.emit("highlight");
+      view.updateMatch();
+    }
+    expect(await view.querySyntax("state", [])).toBeNull();
+    expect(queries.length).toBe(count);
+    expect(paint().length).toBe(0);
+    expect(report).toHaveBeenCalledOnceWith("Unable to update bracket match", failure);
+    mode.error = null;
+    const resumed = view.updateMatch();
+    expect(queries.length).toBe(count + 1);
+    queries.at(-1).resolve(pair());
+    await resumed;
+    expect(paint().length).toBe(2);
+  });
+
+  it("reports repeated processor errors once per source input while preserving rejection", async () => {
+    const report = spyOn(console, "error");
+    for (const column of [1, 2]) {
+      editor.setCursorBufferPosition([0, column]);
+      const pending = view.matchPromise;
+      queries.at(-1).reject(new Error("Same unavailable parser"));
+      await expectAsync(pending).toBeRejected();
+    }
+    expect(report).toHaveBeenCalledTimes(1);
+    epoch++;
+    const fresh = view.updateMatch();
+    queries.at(-1).reject(new Error("New syntax input failed"));
+    await expectAsync(fresh).toBeRejected();
+    expect(report).toHaveBeenCalledTimes(2);
+  });
+
+  it("clears quarantined paint and requests once when both mode events announce recovery", async () => {
+    view.destroy();
+    let available = true;
+    editor.getSyntaxAvailability = () => ({ available });
+    editor.onDidChangeSyntaxAvailability = (callback) => events.on("availability", callback);
+    const View = require("../lib/bracket-matcher-view");
+    view = new View(editor, editor.element, manager);
+    queries.at(-1).resolve(pair());
+    await view.matchPromise;
+    const replace = () => {
+      const replacement = lumine.grammars.languageModeForGrammarAndBuffer(
+        editor.getGrammar(),
+        editor.getBuffer(),
+      );
+      replacement.asynchronousSyntax = true;
+      editor.getBuffer().setLanguageMode(replacement);
+      events.emit("availability", { available });
+    };
+    const before = queries.length;
+    available = false;
+    replace();
+    expect(paint().length).toBe(0);
+    expect(queries.length).toBe(before);
+    available = true;
+    replace();
+    expect(queries.length).toBe(before + 1);
+    queries.at(-1).resolve(pair());
+    await view.matchPromise;
+    expect(paint().length).toBe(2);
+  });
+
+  it("keeps plain typing, newline and backspace available without failed-mode enrichment", () => {
+    const Matcher = require("../lib/bracket-matcher");
+    const matcher = new Matcher(editor, editor.element, manager);
+    try {
+      mode.error = new Error("Known unavailable parser");
+      spyOn(matcher, "getScopedSetting").and.throwError("Failed syntax must not enrich typing");
+      editor.analyzeSyntax.calls.reset();
+      editor.setCursorBufferPosition([0, 5]);
+      editor.insertText("x#");
+      editor.insertNewline();
+      editor.backspace();
+      expect(editor.getText()).toBe("(one)x#\nother");
+      expect(editor.analyzeSyntax).not.toHaveBeenCalled();
+      expect(matcher.getScopedSetting).not.toHaveBeenCalled();
+    } finally {
+      matcher.destroy();
+    }
+  });
+
   it("does not erase a newer match or report an obsolete query failure", async () => {
     spyOn(console, "error");
     const obsolete = view.updateMatch(),
