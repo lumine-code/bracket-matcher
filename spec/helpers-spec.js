@@ -1,6 +1,14 @@
 const { adviseBefore } = require("../lib/helpers");
 
 describe("adviseBefore", () => {
+  it("returns asynchronous advice without also running the original insertion", async () => {
+    const original = jasmine.createSpy("original");
+    const object = { method: original };
+    const subscription = adviseBefore(object, "method", () => Promise.resolve("prepared"));
+    expect(await object.method()).toBe("prepared");
+    expect(original).not.toHaveBeenCalled();
+    subscription.dispose();
+  });
   it("can remove an older advice without disrupting a newer one", () => {
     const original = jasmine.createSpy("original").and.returnValue("result");
     const older = jasmine.createSpy("older");
