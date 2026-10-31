@@ -46,8 +46,12 @@ jobs:
         run: npm run format:check
       - name: Check package payload
         run: npm pack --dry-run --json
+      - name: Test the audit policy
+        run: node --test script/check-audit.test.js
       - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+        run: |
+          npm audit --json --audit-level=none > npm-audit.json
+          node script/check-audit.js npm-audit.json
       - name: Check package contents
         run: npm pack --dry-run
 
