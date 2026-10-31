@@ -148,6 +148,90 @@ describe("Deferred interpolation without cached scopes", () => {
     expect(editor.getText()).toBe('foo = "#"');
   });
 
+  it("keeps multiple source values with their own input in reverse creation order", async () => {
+    await start('a = "first second"', "source.ruby", [0, 17]);
+    editor.setSelectedBufferRanges([
+      [
+        [0, 11],
+        [0, 17],
+      ],
+      [
+        [0, 5],
+        [0, 10],
+      ],
+    ]);
+    editor.insertText("#", { autoDecreaseIndent: false });
+    await pending;
+    expect(editor.getText()).toBe('a = "#{first} #{second}"');
+    editor.undo();
+    expect(editor.getText()).toBe('a = "first second"');
+  });
+
+  async function selectDistinctValues() {
+    await start('a = "first"\nb = "second third"', "source.ruby", [1, 11]);
+    editor.setSelectedBufferRanges([
+      [
+        [0, 5],
+        [0, 10],
+      ],
+      [
+        [1, 5],
+        [1, 11],
+      ],
+    ]);
+  }
+
+  it("does not exchange selected source after insertion observers swap live cursors", async () => {
+    await selectDistinctValues();
+    let inserted = 0;
+    editor.onDidInsertText(({ text }) => {
+      if (text === "#" && ++inserted === 2)
+        editor.setSelectedBufferRanges(editor.getSelectedBufferRanges().reverse());
+    });
+    editor.insertText("#", { autoDecreaseIndent: false });
+    await pending;
+    expect(editor.getText()).toBe('a = "#"\nb = "# third"');
+    editor.undo();
+    expect(editor.getText()).toBe('a = "first"\nb = "second third"');
+  });
+
+  it("does not claim source redirected between individual native insertions", async () => {
+    await selectDistinctValues();
+    let inserted = 0;
+    editor.onDidInsertText(({ text }) => {
+      if (text === "#" && ++inserted === 1)
+        editor.getSelections()[1].setBufferRange([
+          [1, 12],
+          [1, 17],
+        ]);
+    });
+    editor.insertText("#", { autoDecreaseIndent: false });
+    await pending;
+    expect(editor.getText()).toBe('a = "#"\nb = "second #"');
+  });
+
+  it("does not restore source changed between individual native insertions", async () => {
+    await selectDistinctValues();
+    let inserted = 0;
+    editor.onDidInsertText(({ text }) => {
+      if (text !== "#" || ++inserted !== 1) return;
+      editor.getBuffer().setTextInRange(
+        [
+          [1, 5],
+          [1, 11],
+        ],
+        "SECOND",
+      );
+      editor.getSelections()[1].setBufferRange([
+        [1, 5],
+        [1, 11],
+      ]);
+    });
+    editor.insertText("#", { autoDecreaseIndent: false });
+    await pending;
+    expect(editor.getText()).toBe('a = "#"\nb = "# third"');
+  });
+
   it("rejects an optional enrichment after configuration changes during analysis", async () => {
     await start('foo = ""', "source.ruby", [0, 7]);
     let release, entered;
