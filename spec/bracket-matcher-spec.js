@@ -1275,27 +1275,30 @@ describe("bracket matching", () => {
     });
 
     describe("when autocompleteCharacters configuration is set globally", () => {
-      it("inserts a matching angle bracket", () => {
+      it("inserts a matching angle bracket in a grammar without a scoped pair policy", async () => {
+        await lumine.packages.activatePackage("language-text");
+        editor.setGrammar(lumine.grammars.grammarForScopeName("text.plain"));
+        await editor.whenGrammarSettled();
         lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"]);
         editor.setCursorBufferPosition([0, 0]);
-        editor.insertText("<");
+        await editor.insertText("<");
         expect(buffer.lineForRow(0)).toBe("<>");
         expect(editor.getCursorBufferPosition()).toEqual([0, 1]);
       });
     });
 
     describe("when autocompleteCharacters configuration is set in scope", () => {
-      it("inserts a matching angle bracket", () => {
+      it("inserts a matching angle bracket", async () => {
         lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
           scopeSelector: ".source.js",
         });
         editor.setCursorBufferPosition([0, 0]);
-        editor.insertText("<");
+        await editor.insertText("<");
         expect(buffer.lineForRow(0)).toBe("<>");
         expect(editor.getCursorBufferPosition()).toEqual([0, 1]);
       });
 
-      it("emits a buffer change event after the cursor is in place", () => {
+      it("emits a buffer change event after the cursor is in place", async () => {
         lumine.config.set("bracket-matcher.autocompleteCharacters", ["<>"], {
           scopeSelector: ".source.js",
         });
@@ -1307,7 +1310,7 @@ describe("bracket matching", () => {
         });
 
         editor.setCursorBufferPosition([0, 0]);
-        editor.insertText("<");
+        await editor.insertText("<");
         expect(lastPosition).toEqual([0, 1]);
       });
     });

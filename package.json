@@ -34,6 +34,7 @@
     "language-javascript",
     "language-regex",
     "language-ruby",
+    "language-rust",
     "language-text",
     "language-xml"
   ],
@@ -64,6 +65,18 @@
         "«»",
         "‹›"
       ]
+    },
+    "autocompleteDisabledCharacters": {
+      "title": "Characters Without Automatic Pairing",
+      "description": "Opening characters whose pairs remain matchable without automatic insertion, wrapping, deletion or skipping.",
+      "scopeResolution": "grammar",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1
+      },
+      "default": []
     },
     "pairsWithExtraNewline": {
       "title": "Pairs With Extra Newline",

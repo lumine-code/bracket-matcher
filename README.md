@@ -11,6 +11,7 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/b
 - **Autocompletion**: inserts the closing bracket or quote when an opening one is typed.
 - **Selection wrapping**: wraps selected text in brackets or quotes when the opening character is typed.
 - **Scoped pairs**: customizes matching pairs globally or per language.
+- **Selective autocompletion**: keeps matching and navigation for pairs whose automatic edits are disabled.
 - **Universal editors**: matches brackets in every registered text editor, including docks and panels.
 - **Scrollbar markers**: shows the matching bracket positions on the scrollbar and minimap via the marker hub.
 
@@ -47,9 +48,10 @@ Matching pairs can be customized per language through scoped settings in your `c
 
 ```json
 {
-  ".rust.source": {
+  ".source.rust": {
     "bracket-matcher": {
-      "autocompleteCharacters": ["()", "[]", "{}", "<>", "\"\"", "``"]
+      "autocompleteCharacters": ["()", "[]", "{}", "<>", "\"\"", "''"],
+      "autocompleteDisabledCharacters": ["<"]
     }
   }
 }

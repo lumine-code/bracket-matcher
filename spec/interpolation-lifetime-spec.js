@@ -58,4 +58,12 @@ describe("Deferred string interpolation lifetime", () => {
     editor.undo();
     expect(editor.getText()).toBe('""');
   });
+
+  it("keeps the typed hash when automatic brace pairing is disabled during analysis", async () => {
+    matcher.insertInterpolation();
+    matcher.matchManager.autocompleteDisabledCharacters = new Set(["{"]);
+    release();
+    await matcher.pendingInterpolation;
+    expect(editor.getText()).toBe('"#"');
+  });
 });
