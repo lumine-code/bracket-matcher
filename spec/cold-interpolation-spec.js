@@ -232,6 +232,28 @@ describe("Deferred interpolation without cached scopes", () => {
     expect(editor.getText()).toBe('a = "#"\nb = "# third"');
   });
 
+  it("does not claim a selection whose end changes between native insertions", async () => {
+    await selectDistinctValues();
+    let inserted = 0;
+    editor.onDidInsertText(({ text }) => {
+      if (text === "#" && ++inserted === 1)
+        editor.getSelections()[1].setBufferRange([
+          [1, 5],
+          [1, 17],
+        ]);
+    });
+    editor.insertText("#", { autoDecreaseIndent: false });
+    await pending;
+    expect(editor.getText()).toBe('a = "#"\nb = "#"');
+  });
+
+  it("leaves enclosing transactions without an owned published input batch ordinary", async () => {
+    await start('foo = ""', "source.ruby", [0, 7]);
+    editor.transact(() => editor.insertText("#"));
+    await pending;
+    expect(editor.getText()).toBe('foo = "#"');
+  });
+
   it("rejects an optional enrichment after configuration changes during analysis", async () => {
     await start('foo = ""', "source.ruby", [0, 7]);
     let release, entered;
