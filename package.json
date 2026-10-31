@@ -30,8 +30,10 @@
   },
   "specPackages": [
     "language-gfm",
+    "language-haskell",
     "language-html",
     "language-javascript",
+    "language-json",
     "language-regex",
     "language-ruby",
     "language-rust",

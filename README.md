@@ -12,6 +12,7 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/b
 - **Selection wrapping**: wraps selected text in brackets or quotes when the opening character is typed.
 - **Scoped pairs**: customizes matching pairs globally or per language.
 - **Selective autocompletion**: keeps matching and navigation for pairs whose automatic edits are disabled.
+- **Embedded languages**: applies the code's pair rules inside Markdown fences and other embedded scopes. Unavailable syntax or conflicting selection rules leave typing unchanged.
 - **Universal editors**: matches brackets in every registered text editor, including docks and panels.
 - **Scrollbar markers**: shows the matching bracket positions on the scrollbar and minimap via the marker hub.
 

@@ -36,8 +36,11 @@ describe("atomic bracket insertion", () => {
     it(`publishes ${scenario.name} with final indentation and cursor`, async () => {
       editor.setText(scenario.text);
       lumine.grammars.assignLanguageMode(editor.getBuffer(), "source.js");
-      await editor.whenGrammarSettled();
       editor.setCursorBufferPosition(scenario.position);
+      await editor.whenGrammarSettled();
+      // Automatic pairs use exact worker scopes. Test atomic publication once
+      // that semantic context is ready; pending scopes deliberately skip edits.
+      await editor.getScopeDescriptorsForBufferPositions(editor.getCursorBufferPositions());
       editor.getBuffer().clearUndoStack();
       const frames = [],
         publications = [];

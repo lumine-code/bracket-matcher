@@ -40,6 +40,7 @@ module.exports = function observeMatching(pack) {
   return async function waitForMatching(editor) {
     await editor.whenGrammarSettled();
     await editor.getBuffer().getLanguageMode().refresh?.();
+    await editor.getScopeDescriptorsForBufferPositions(editor.getCursorBufferPositions());
     while (pending.get(editor)?.size) await Promise.all([...pending.get(editor)]);
   };
 };
