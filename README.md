@@ -6,7 +6,7 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/b
 
 ## Features
 
-- **Bracket highlighting**: highlights the bracket matching the `(){}[]` character under the cursor.
+- **Bracket highlighting**: highlights matching `(){}[]` pairs on either side of the cursor.
 - **Tag matching**: highlights matching XML and HTML tags.
 - **Autocompletion**: inserts the closing bracket or quote when an opening one is typed.
 - **Selection wrapping**: wraps selected text in brackets or quotes when the opening character is typed.
