@@ -51,16 +51,14 @@ describe("atomic bracket insertion", () => {
         }),
       );
       const mode = editor.getBuffer().getLanguageMode(),
-        request = mode.service.client.request.bind(mode.service.client);
+        prepareInputIndentation = mode.prepareInputIndentation.bind(mode);
       let release, entered;
       const gate = new Promise((resolve) => (release = resolve)),
         ready = new Promise((resolve) => (entered = resolve));
-      spyOn(mode.service.client, "request").and.callFake(async (operation, ...args) => {
-        const result = request(operation, ...args);
-        if (operation === "prepared-indent") {
-          entered();
-          await gate;
-        }
+      spyOn(mode, "prepareInputIndentation").and.callFake(async (...args) => {
+        const result = prepareInputIndentation(...args);
+        entered();
+        await gate;
         return result;
       });
       const pending = scenario.action(editor);
