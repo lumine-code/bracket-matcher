@@ -207,6 +207,61 @@ describe("Asynchronous bracket highlight lifetime", () => {
     expect(paint().length).toBe(2);
   });
 
+  it("leaves dormant tabs alone, keeps commands explicit, and resumes automatic matching on tokenization", async () => {
+    view.destroy();
+    let deferred = true;
+    spyOn(editor, "getSyntaxAvailability").and.callFake(() => ({ available: true, deferred }));
+    spyOn(editor, "onDidTokenize").and.callFake((callback) => events.on("tokenize", callback));
+    const scopes = spyOn(editor, "getScopeDescriptorsForBufferPositions").and.resolveTo([
+      editor.getRootScopeDescriptor(),
+    ]);
+    const MatchManager = require("../lib/match-manager");
+    const matchManager = new MatchManager(editor);
+    const View = require("../lib/bracket-matcher-view");
+    const priorQueries = queries.length;
+    view = new View(editor, editor.getElement(), matchManager);
+    try {
+      await Promise.resolve();
+      expect(queries.length).toBe(priorQueries);
+      expect(scopes).not.toHaveBeenCalled();
+
+      const command = view.commandMatch();
+      expect(queries.length).toBe(priorQueries + 1);
+      queries.at(-1).resolve(pair());
+      expect((await command).endRange.start).toEqual(new Point(0, 4));
+
+      deferred = false;
+      events.emit("tokenize");
+      queries.at(-1).resolve(pair());
+      await view.matchPromise;
+      await matchManager.pendingAutomaticScopes?.promise;
+      expect(queries.length).toBe(priorQueries + 2);
+      expect(scopes).toHaveBeenCalledTimes(1);
+      expect(paint().length).toBe(2);
+    } finally {
+      view.destroy();
+      matchManager.destroy();
+    }
+  });
+
+  it("preserves an interactive policy request queued before dormant prefetch runs", async () => {
+    spyOn(editor, "getSyntaxAvailability").and.returnValue({ available: true, deferred: true });
+    const scopes = spyOn(editor, "getScopeDescriptorsForBufferPositions").and.resolveTo([
+      editor.getRootScopeDescriptor(),
+    ]);
+    const MatchManager = require("../lib/match-manager");
+    const matchManager = new MatchManager(editor);
+    try {
+      expect(matchManager.getAutomaticPolicy()).toBeNull();
+      await Promise.resolve();
+      await matchManager.pendingAutomaticScopes?.promise;
+      expect(scopes).toHaveBeenCalledTimes(1);
+      expect(matchManager.getAutomaticPolicy()).not.toBeNull();
+    } finally {
+      matchManager.destroy();
+    }
+  });
+
   it("keeps plain typing, newline and backspace available without failed-mode enrichment", () => {
     const Matcher = require("../lib/bracket-matcher");
     const matcher = new Matcher(editor, editor.element, manager);
